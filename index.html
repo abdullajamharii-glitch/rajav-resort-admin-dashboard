@@ -144,8 +144,7 @@ button { cursor: pointer; border: none; background: none; }
 }
 
 /* ─── APP SHELL ───────────────────────────────────────────── */
-#app { display: none; min-height: 100vh; }
-.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.shell { display: block; min-height: 100vh; }
 
 /* ─── SIDEBAR ─────────────────────────────────────────────── */
 .sidebar {
@@ -649,7 +648,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────── */
 @media(max-width:900px){
-  .shell { grid-template-columns: 1fr; }
+  .shell { display: block; }
   .sidebar {
     transform: translateX(-100%); width: 260px;
   }
@@ -862,17 +861,17 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
             <div class="stepper" id="stepper">
               <div class="step-item active" data-step="1">
                 <div class="step-num">1</div>
-                <span class="step-label">Room</span>
+                <span class="step-label">Stay</span>
               </div>
               <div class="step-line" data-line="1"></div>
               <div class="step-item" data-step="2">
                 <div class="step-num">2</div>
-                <span class="step-label">Guest</span>
+                <span class="step-label">Room</span>
               </div>
               <div class="step-line" data-line="2"></div>
               <div class="step-item" data-step="3">
                 <div class="step-num">3</div>
-                <span class="step-label">Stay</span>
+                <span class="step-label">Guest</span>
               </div>
               <div class="step-line" data-line="3"></div>
               <div class="step-item" data-step="4">
@@ -886,29 +885,53 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
               </div>
             </div>
 
-            <!-- Step 1: Select Room -->
+            <!-- Step 1: Stay Details -->
             <div class="wizard-step active" id="ws_1">
               <div class="form-block">
                 <div class="form-block-header">
                   <div class="form-block-num">1</div>
+                  <div class="form-block-title">Stay Details</div>
+                </div>
+                <div class="form-block-body">
+                  <div class="grid2">
+                    <div class="field"><label>Check-in Date *</label><input id="f_ci" type="date" onchange="onDateChange()"></div>
+                    <div class="field"><label>Check-out Date *</label><input id="f_co" type="date" onchange="onDateChange()"></div>
+                    <div class="field"><label>Number of Guests</label><input id="f_guests" type="number" min="1" max="8" placeholder="2"></div>
+                    <div class="field"><label>Room Rate (per night)</label><input id="f_rate" type="text" readonly placeholder="Auto-filled"></div>
+                    <div class="field"><label>Total Amount</label><input id="f_total" type="text" readonly placeholder="Auto-calculated"></div>
+                    <div class="field"><label>Special Requests</label><input id="f_notes" type="text" placeholder="e.g. early check-in, anniversary"></div>
+                  </div>
+                  <div class="wizard-nav">
+                    <div></div>
+                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Select Room →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Select Room -->
+            <div class="wizard-step" id="ws_2">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">2</div>
                   <div class="form-block-title">Select Room</div>
                 </div>
                 <div class="form-block-body">
                   <div class="room-grid" id="room_grid"></div>
                   <div class="conflict-warn" id="conflict_warn">⚠ This room is already booked for the selected dates.</div>
                   <div class="wizard-nav">
-                    <div></div>
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back to Stay</button>
                     <button class="btn-wizard btn-next" onclick="nextStep()">Next — Guest Details →</button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Step 2: Guest Details -->
-            <div class="wizard-step" id="ws_2">
+            <!-- Step 3: Guest Details -->
+            <div class="wizard-step" id="ws_3">
               <div class="form-block">
                 <div class="form-block-header">
-                  <div class="form-block-num">2</div>
+                  <div class="form-block-num">3</div>
                   <div class="form-block-title">Guest Details</div>
                 </div>
                 <div class="form-block-body">
@@ -923,31 +946,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
                     <div class="field"><label>ID Number</label><input id="f_idn" type="text" placeholder="ID number"></div>
                   </div>
                   <div class="wizard-nav">
-                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back</button>
-                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Stay Details →</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Step 3: Stay Details -->
-            <div class="wizard-step" id="ws_3">
-              <div class="form-block">
-                <div class="form-block-header">
-                  <div class="form-block-num">3</div>
-                  <div class="form-block-title">Stay Details</div>
-                </div>
-                <div class="form-block-body">
-                  <div class="grid2">
-                    <div class="field"><label>Check-in Date *</label><input id="f_ci" type="date" onchange="onDateChange()"></div>
-                    <div class="field"><label>Check-out Date *</label><input id="f_co" type="date" onchange="onDateChange()"></div>
-                    <div class="field"><label>Number of Guests</label><input id="f_guests" type="number" min="1" max="8" placeholder="2"></div>
-                    <div class="field"><label>Room Rate (per night)</label><input id="f_rate" type="text" readonly placeholder="Auto-filled"></div>
-                    <div class="field"><label>Total Amount</label><input id="f_total" type="text" readonly placeholder="Auto-calculated"></div>
-                    <div class="field"><label>Special Requests</label><input id="f_notes" type="text" placeholder="e.g. early check-in, anniversary"></div>
-                  </div>
-                  <div class="wizard-nav">
-                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back</button>
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back to Room</button>
                     <button class="btn-wizard btn-next" onclick="nextStep()">Next — Payment →</button>
                   </div>
                 </div>
@@ -1391,19 +1390,18 @@ function prevStep(){
 function validateStep(step){
   switch(step){
     case 1:
-      if(!selR) { toast('Please select a room.','err'); return false; }
-      return true;
-    case 2:
-      if(!document.getElementById('f_name').value.trim()) { toast('Guest name is required.','err'); return false; }
-      if(!document.getElementById('f_phone').value.trim()) { toast('Phone number is required.','err'); return false; }
-      return true;
-    case 3:
       const ci=document.getElementById('f_ci').value;
       const co=document.getElementById('f_co').value;
       if(!ci) { toast('Check-in date is required.','err'); return false; }
       if(!co) { toast('Check-out date is required.','err'); return false; }
       if(co<=ci) { toast('Check-out must be after check-in.','err'); return false; }
-      if(hasConflict(selR.id,ci,co)) { toast('Room conflict — choose different dates.','err'); return false; }
+      return true;
+    case 2:
+      if(!selR) { toast('Please select a room.','err'); return false; }
+      return true;
+    case 3:
+      if(!document.getElementById('f_name').value.trim()) { toast('Guest name is required.','err'); return false; }
+      if(!document.getElementById('f_phone').value.trim()) { toast('Phone number is required.','err'); return false; }
       return true;
     case 4:
       return true;
