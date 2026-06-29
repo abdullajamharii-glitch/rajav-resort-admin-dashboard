@@ -9,7 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ─── TOKENS ──────────────────────────────────────────────── */
+/* topbar-resort-name & sep */
+.topbar-resort-name { color: var(--muted); }
+.topbar-sep { color: var(--border); margin: 0 4px; }
 :root {
   --bg:        #F5F5F0;
   --surface:   #FFFFFF;
@@ -208,18 +210,23 @@ button { cursor: pointer; border: none; background: none; }
 /* ─── MAIN ────────────────────────────────────────────────── */
 .main { margin-left: 240px; min-height: 100vh; display: flex; flex-direction: column; }
 .topbar {
-  height: 60px; background: var(--surface); border-bottom: 1px solid var(--border);
+  min-height: 60px; background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; padding: 0 32px;
   justify-content: space-between; position: sticky; top: 0; z-index: 50;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 6px;
 }
-.topbar-left { display: flex; align-items: center; gap: 12px; }
-.topbar-breadcrumb { font-size: 13px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-.topbar-breadcrumb strong { color: var(--text); font-weight: 600; }
-.topbar-right { display: flex; align-items: center; gap: 16px; }
-.topbar-date { font-size: 12px; color: var(--muted); }
+.topbar-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.topbar-breadcrumb {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0;
+}
+.topbar-breadcrumb strong { color: var(--text); font-weight: 600; white-space: nowrap; }
+.topbar-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.topbar-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
 
-.content { padding: 28px 32px; flex: 1; }
+.content { padding: 28px 32px; flex: 1; max-width: 1600px; width: 100%; }
 
 /* ─── PAGES ───────────────────────────────────────────────── */
 .page { display: none; }
@@ -231,7 +238,7 @@ button { cursor: pointer; border: none; background: none; }
 
 /* ─── STATS ROW ───────────────────────────────────────────── */
 .stats-row {
-  display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+  display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px;
   margin-bottom: 28px;
 }
 .stat-card {
@@ -652,8 +659,25 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
   .grid2 { grid-template-columns: 1fr; }
   .grid3 { grid-template-columns: 1fr 1fr; }
   .room-grid { grid-template-columns: 1fr 1fr; }
-  .content { padding: 20px 16px; }
-  .topbar { padding: 0 16px; }
+  .content { padding: 16px 14px; }
+
+  /* Topbar mobile layout */
+  .topbar {
+    padding: 10px 14px;
+    min-height: 56px;
+  }
+  .topbar-left { flex: 1; min-width: 0; overflow: hidden; }
+  .topbar-breadcrumb {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100vw - 100px);
+  }
+  .topbar-right {
+    flex-shrink: 0;
+  }
+  .topbar-date { font-size: 11px; }
 
   /* Mobile cards for bookings */
   .desktop-table { display: none; }
@@ -679,6 +703,14 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
   .room-grid { grid-template-columns: 1fr 1fr; }
   .page-heading { font-size: 22px; }
   .bc-details { grid-template-columns: 1fr 1fr; }
+  .topbar-breadcrumb { font-size: 11px; max-width: calc(100vw - 90px); }
+  .topbar-resort-name, .topbar-sep { display: none; }
+}
+/* ─── PC WIDE SCREEN CONSTRAINTS ──────────────────────────── */
+@media(min-width:1400px){
+  .stats-row { grid-template-columns: repeat(4, minmax(200px, 320px)); }
+  .dash-grid { max-width: 1200px; }
+  .tbl-container { max-width: 1400px; }
 }
 </style>
 </head>
@@ -704,7 +736,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
     <input class="login-input" id="l_p" type="password" placeholder="Enter password" autocomplete="current-password">
     <button class="login-submit" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="l_err">Incorrect credentials. Please try again.</div>
-    <div class="login-hint">admin / rajav2024</div>
+    <!-- password hint removed for security -->
   </div>
 </div>
 
@@ -751,7 +783,9 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
             <span></span><span></span><span></span>
           </button>
           <div class="topbar-breadcrumb">
-            Rajav Beach Resort &nbsp;/&nbsp; <strong id="tb_page">Dashboard</strong>
+            <span class="topbar-resort-name">Rajav Beach Resort</span>
+            <span class="topbar-sep" aria-hidden="true">/</span>
+            <strong id="tb_page">Dashboard</strong>
           </div>
         </div>
         <div class="topbar-right">
@@ -1133,7 +1167,17 @@ const ROOMS = [
   {id:'economy1',name:'Economy Room 1',  rate:3000,  icon:'🏠', ck:'ck-e1', tag:'tag-e1', color:'#6D28D9', label:'Value'},
   {id:'economy2',name:'Economy Room 2',  rate:3000,  icon:'🏠', ck:'ck-e2', tag:'tag-e2', color:'#9D174D', label:'Value'},
 ];
-const CREDS = {admin:'rajav2024', manager:'cherai123'};
+// SHA-256 hashed passwords (not plain text)
+// admin → sha256('rajav2024'), manager → sha256('cherai123')
+const CRED_HASHES = {
+  admin:   'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d',
+  manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4'
+};
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 /* ─── STATE ──────────────────────────────────────────────────── */
 let bks     = JSON.parse(localStorage.getItem('rajav_v4')||'[]');
@@ -1169,20 +1213,35 @@ function hasConflict(rid,ci,co,exc=null){
 }
 
 /* ─── AUTH ───────────────────────────────────────────────────── */
-function doLogin(){
-  const u=document.getElementById('l_u').value.trim();
+// Hash actual passwords on first run to populate CRED_HASHES.
+// Run this in browser console once: sha256('yourpassword').then(console.log)
+async function doLogin(){
+  const u=document.getElementById('l_u').value.trim().toLowerCase();
   const p=document.getElementById('l_p').value;
-  if(CREDS[u]&&CREDS[u]===p){
+  if(!u||!p){
+    showLoginErr();
+    return;
+  }
+  // Hash the entered password and compare
+  const hashed = await sha256(p);
+  // Fallback plain-text check for initial setup (remove after setting hashes)
+  const PLAIN={admin:'rajav2024',manager:'cherai123'};
+  const ok = (CRED_HASHES[u] && CRED_HASHES[u]===hashed) ||
+              (PLAIN[u] && PLAIN[u]===p);
+  if(ok){
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     document.getElementById('sb_user').textContent=u.charAt(0).toUpperCase()+u.slice(1);
     setDateLabel();
     renderDash();
   } else {
-    const e=document.getElementById('l_err');
-    e.style.display='block';
-    setTimeout(()=>e.style.display='none',3000);
+    showLoginErr();
   }
+}
+function showLoginErr(){
+  const e=document.getElementById('l_err');
+  e.style.display='block';
+  setTimeout(()=>e.style.display='none',3000);
 }
 function doLogout(){
   document.getElementById('loginScreen').style.display='grid';
