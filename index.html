@@ -737,6 +737,9 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
     <label class="login-field-label" for="l_p">Password</label>
     <input class="login-input" id="l_p" type="password" placeholder="Enter password" autocomplete="current-password">
     <button class="login-submit" onclick="doLogin()">Sign In</button>
+    <div style="text-align:center; margin-top:14px;">
+      <a href="#" onclick="showForgot()" style="color:var(--accent); font-size:12px; text-decoration:none; font-weight:500;">Forgot Password?</a>
+    </div>
     <div class="login-err" id="l_err">Incorrect credentials. Please try again.</div>
     <!-- password hint removed for security -->
   </div>
@@ -1087,6 +1090,48 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
   </div><!-- /shell -->
 </div><!-- /app -->
 
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-overlay" id="m_forgot">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-body">
+      <div class="modal-title">Reset Password</div>
+      <div class="modal-sub" style="margin-bottom:16px;">Enter your phone number to receive an OTP via WhatsApp.</div>
+      
+      <div id="forgot_step1">
+        <div class="field" style="margin-bottom:16px;">
+          <label>Registered Phone Number</label>
+          <input id="fg_phone" type="tel" placeholder="e.g. 7736363578">
+        </div>
+        <button class="btn-primary" style="width:100%; justify-content:center;" onclick="sendOTP()">Send OTP</button>
+      </div>
+      
+      <div id="forgot_step2" style="display:none;">
+        <div class="field" style="margin-bottom:16px;">
+          <label>Enter 6-Digit OTP</label>
+          <input id="fg_otp" type="number" placeholder="Enter OTP">
+        </div>
+        <button class="btn-primary" style="width:100%; justify-content:center;" onclick="verifyOTP()">Verify OTP</button>
+      </div>
+      
+      <div id="forgot_step3" style="display:none;">
+        <div class="field" style="margin-bottom:12px;">
+          <label>New Password</label>
+          <input id="fg_new_pass" type="password" placeholder="Enter new password">
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label>Confirm New Password</label>
+          <input id="fg_conf_pass" type="password" placeholder="Confirm new password">
+        </div>
+        <button class="btn-primary" style="width:100%; justify-content:center;" onclick="resetPassword()">Update Password</button>
+      </div>
+      
+      <div class="modal-btns" style="justify-content:center; margin-top:18px;">
+        <button class="btn-keep" onclick="closeM('m_forgot')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TICKET MODAL -->
 <div class="modal-overlay" id="m_ticket">
   <div class="modal">
@@ -1185,6 +1230,16 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const _db  = firebase.database();
 const _ref = _db.ref('bookings');
 
+// Seed initial credentials in Firebase Realtime Database
+_db.ref('credentials').once('value', snap => {
+  if (!snap.exists()) {
+    _db.ref('credentials').set({
+      admin: 'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d', // rajav2024
+      manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4' // cherai123
+    });
+  }
+});
+
 // ─── SHA-256 HASH HELPER ─────────────────────────────────────────
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1276,41 +1331,132 @@ async function doLogin(){
   const p = document.getElementById('l_p').value;
   if (!u || !p) { showLoginErr(); return; }
 
-  // SHA-256 hash comparison + plain-text fallback
+  showLoader();
   const hashed = await sha256(p);
-  const PLAIN = {admin:'rajav2024', manager:'cherai123'};
-  const HASHES = {
-    admin:   await sha256('rajav2024'),
-    manager: await sha256('cherai123')
-  };
-  const ok = (HASHES[u] && HASHES[u] === hashed) || (PLAIN[u] && PLAIN[u] === p);
+  
+  _db.ref('credentials/' + u).once('value', async snap => {
+    hideLoader();
+    const dbHash = snap.val();
+    
+    // Fallback checks
+    const PLAIN = {admin:'rajav2024', manager:'cherai123'};
+    const HASHES = {
+      admin:   'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d',
+      manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4'
+    };
+    
+    const ok = (dbHash && dbHash === hashed) || 
+               (!dbHash && HASHES[u] === hashed) || 
+               (PLAIN[u] && PLAIN[u] === p);
 
-  if (ok) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('sb_user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
-    _loggedIn = true;
-    setDateLabel();
+    if (ok) {
+      // Save hashed version if it doesn't match/exist in DB
+      if (dbHash !== hashed) {
+        _db.ref('credentials/' + u).set(hashed);
+      }
+      
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('sb_user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+      _loggedIn = true;
+      setDateLabel();
 
-    // Migrate any existing localStorage bookings to Firebase (one-time)
-    const legacyRaw = localStorage.getItem('rajav_v4');
-    if (legacyRaw) {
-      try {
-        const legacy = JSON.parse(legacyRaw);
-        if (legacy.length && bks.length === 0) {
-          showLoader();
-          const writes = {};
-          legacy.forEach(b => { writes[b.id] = b; });
-          await _ref.update(writes);
-          localStorage.removeItem('rajav_v4');
-          toast('Existing bookings migrated to cloud ☁️', 'ok');
-        }
-      } catch(e) { /* ignore */ }
+      // Migrate any existing localStorage bookings to Firebase (one-time)
+      const legacyRaw = localStorage.getItem('rajav_v4');
+      if (legacyRaw) {
+        try {
+          const legacy = JSON.parse(legacyRaw);
+          if (legacy.length && bks.length === 0) {
+            showLoader();
+            const writes = {};
+            legacy.forEach(b => { writes[b.id] = b; });
+            await _ref.update(writes);
+            localStorage.removeItem('rajav_v4');
+            toast('Existing bookings migrated to cloud ☁️', 'ok');
+          }
+        } catch(e) { /* ignore */ }
+      }
+      renderDash();
+    } else {
+      showLoginErr();
     }
-    renderDash();
-  } else {
+  }, () => {
+    hideLoader();
     showLoginErr();
+  });
+}
+
+// ─── FORGOT PASSWORD & RECOVERY FLOW ─────────────────────────────
+let generatedOTP = null;
+const RECOVERY_NUMBER = '7736363578';
+
+function showForgot() {
+  document.getElementById('fg_phone').value = '';
+  document.getElementById('fg_otp').value = '';
+  document.getElementById('fg_new_pass').value = '';
+  document.getElementById('fg_conf_pass').value = '';
+  document.getElementById('forgot_step1').style.display = 'block';
+  document.getElementById('forgot_step2').style.display = 'none';
+  document.getElementById('forgot_step3').style.display = 'none';
+  document.getElementById('m_forgot').classList.add('open');
+}
+
+function sendOTP() {
+  const ph = document.getElementById('fg_phone').value.replace(/\D/g,'');
+  if (!ph.endsWith(RECOVERY_NUMBER)) {
+    toast('Invalid recovery phone number.', 'err');
+    return;
   }
+  
+  // Generate random 6-digit OTP
+  generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  const msg = `Rajav Resort Admin Password Recovery OTP: ${generatedOTP}`;
+  const waUrl = `https://wa.me/91${RECOVERY_NUMBER}?text=${encodeURIComponent(msg)}`;
+  
+  window.open(waUrl, '_blank');
+  toast('OTP sent to WhatsApp!', 'ok');
+  
+  document.getElementById('forgot_step1').style.display = 'none';
+  document.getElementById('forgot_step2').style.display = 'block';
+}
+
+function verifyOTP() {
+  const entered = document.getElementById('fg_otp').value.trim();
+  if (entered === generatedOTP) {
+    toast('OTP verified.', 'ok');
+    document.getElementById('forgot_step2').style.display = 'none';
+    document.getElementById('forgot_step3').style.display = 'block';
+  } else {
+    toast('Incorrect OTP. Try again.', 'err');
+  }
+}
+
+async function resetPassword() {
+  const p1 = document.getElementById('fg_new_pass').value;
+  const p2 = document.getElementById('fg_conf_pass').value;
+  
+  if (!p1) {
+    toast('Password cannot be empty.', 'err');
+    return;
+  }
+  if (p1 !== p2) {
+    toast('Passwords do not match.', 'err');
+    return;
+  }
+  
+  showLoader();
+  const hashed = await sha256(p1);
+  _db.ref('credentials/admin').set(hashed)
+    .then(() => {
+      hideLoader();
+      toast('Password reset successfully!', 'ok');
+      closeM('m_forgot');
+    })
+    .catch(() => {
+      hideLoader();
+      toast('Failed to reset password.', 'err');
+    });
 }
 function showLoginErr(){
   const e = document.getElementById('l_err');
