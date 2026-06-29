@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rajav Beach Resort — Management</title>
 <meta name="description" content="Admin dashboard for Rajav Beach Resort booking management, Cherai Beach, Kochi, Kerala">
+<!-- Firebase SDKs (CDN - no build step needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -790,6 +793,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
         </div>
         <div class="topbar-right">
           <span class="topbar-date" id="tb_date"></span>
+          <span id="sync_dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#F59E0B; margin-left:8px; transition: background 0.3s;" title="Connecting to database..."></span>
         </div>
       </div>
 
@@ -1167,26 +1171,81 @@ const ROOMS = [
   {id:'economy1',name:'Economy Room 1',  rate:3000,  icon:'🏠', ck:'ck-e1', tag:'tag-e1', color:'#6D28D9', label:'Value'},
   {id:'economy2',name:'Economy Room 2',  rate:3000,  icon:'🏠', ck:'ck-e2', tag:'tag-e2', color:'#9D174D', label:'Value'},
 ];
-// SHA-256 hashed passwords (not plain text)
-// admin → sha256('rajav2024'), manager → sha256('cherai123')
-const CRED_HASHES = {
-  admin:   'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d',
-  manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4'
+// ─── FIREBASE INIT ───────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCWvujii1PtszHQBiHoS8tg-Mh9CrUjOuo",
+  authDomain: "rajav-resort.firebaseapp.com",
+  projectId: "rajav-resort",
+  storageBucket: "rajav-resort.firebasestorage.app",
+  messagingSenderId: "437083222790",
+  appId: "1:437083222790:web:c0fdefd7652540a0b72487",
+  measurementId: "G-MFLS616V9G",
+  databaseURL: "https://rajav-resort-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
+firebase.initializeApp(FIREBASE_CONFIG);
+const _db  = firebase.database();
+const _ref = _db.ref('bookings');
 
+// ─── SHA-256 HASH HELPER ─────────────────────────────────────────
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 /* ─── STATE ──────────────────────────────────────────────────── */
-let bks     = JSON.parse(localStorage.getItem('rajav_v4')||'[]');
-let selR    = null, payT = 'advance', filt = 'all';
-let calM    = new Date(); calM.setDate(1);
-let activeBk= null, delId = null, payId = null;
-let currentStep = 1;
+let bks      = [];
+let selR     = null, payT = 'advance', filt = 'all';
+let calM     = new Date(); calM.setDate(1);
+let activeBk = null, delId = null, payId = null;
+let currentStep  = 1;
+let _loggedIn    = false;
 const TOTAL_STEPS = 5;
-const save  = () => localStorage.setItem('rajav_v4', JSON.stringify(bks));
+
+// Firebase CRUD helpers
+const fbSet    = (bk)      => _ref.child(bk.id).set(bk);
+const fbUpdate = (id, upd) => _ref.child(id).update(upd);
+const fbDelete = (id)      => _ref.child(id).remove();
+
+// Keep localStorage as offline cache backup
+const _localSave = () => localStorage.setItem('rajav_v4', JSON.stringify(bks));
+
+// ─── REAL-TIME LISTENER ──────────────────────────────────────────
+_ref.on('value', snap => {
+  const raw = snap.val() || {};
+  bks = Object.values(raw).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  _localSave();
+  if (_loggedIn) {
+    const ap = document.querySelector('.page.active');
+    if (ap) {
+      if (ap.id === 'pg_dash')  renderDash();
+      if (ap.id === 'pg_list')  renderTable();
+      if (ap.id === 'pg_cal')   renderCal();
+    }
+  }
+  hideLoader();
+});
+
+// Show connection status
+_db.ref('.info/connected').on('value', snap => {
+  const indicator = document.getElementById('sync_dot');
+  if (!indicator) return;
+  if (snap.val()) {
+    indicator.title = 'Synced with cloud';
+    indicator.style.background = '#22C55E';
+  } else {
+    indicator.title = 'Offline – changes will sync when reconnected';
+    indicator.style.background = '#F59E0B';
+  }
+});
+
+function showLoader() {
+  const el = document.getElementById('fbLoader');
+  if (el) el.style.display = 'flex';
+}
+function hideLoader() {
+  const el = document.getElementById('fbLoader');
+  if (el) el.style.display = 'none';
+}
 
 /* ─── UTILS ──────────────────────────────────────────────────── */
 const today  = () => new Date().toISOString().split('T')[0];
@@ -1213,41 +1272,58 @@ function hasConflict(rid,ci,co,exc=null){
 }
 
 /* ─── AUTH ───────────────────────────────────────────────────── */
-// Hash actual passwords on first run to populate CRED_HASHES.
-// Run this in browser console once: sha256('yourpassword').then(console.log)
 async function doLogin(){
-  const u=document.getElementById('l_u').value.trim().toLowerCase();
-  const p=document.getElementById('l_p').value;
-  if(!u||!p){
-    showLoginErr();
-    return;
-  }
-  // Hash the entered password and compare
+  const u = document.getElementById('l_u').value.trim().toLowerCase();
+  const p = document.getElementById('l_p').value;
+  if (!u || !p) { showLoginErr(); return; }
+
+  // SHA-256 hash comparison + plain-text fallback
   const hashed = await sha256(p);
-  // Fallback plain-text check for initial setup (remove after setting hashes)
-  const PLAIN={admin:'rajav2024',manager:'cherai123'};
-  const ok = (CRED_HASHES[u] && CRED_HASHES[u]===hashed) ||
-              (PLAIN[u] && PLAIN[u]===p);
-  if(ok){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('sb_user').textContent=u.charAt(0).toUpperCase()+u.slice(1);
+  const PLAIN = {admin:'rajav2024', manager:'cherai123'};
+  const HASHES = {
+    admin:   await sha256('rajav2024'),
+    manager: await sha256('cherai123')
+  };
+  const ok = (HASHES[u] && HASHES[u] === hashed) || (PLAIN[u] && PLAIN[u] === p);
+
+  if (ok) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('sb_user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+    _loggedIn = true;
     setDateLabel();
+
+    // Migrate any existing localStorage bookings to Firebase (one-time)
+    const legacyRaw = localStorage.getItem('rajav_v4');
+    if (legacyRaw) {
+      try {
+        const legacy = JSON.parse(legacyRaw);
+        if (legacy.length && bks.length === 0) {
+          showLoader();
+          const writes = {};
+          legacy.forEach(b => { writes[b.id] = b; });
+          await _ref.update(writes);
+          localStorage.removeItem('rajav_v4');
+          toast('Existing bookings migrated to cloud ☁️', 'ok');
+        }
+      } catch(e) { /* ignore */ }
+    }
     renderDash();
   } else {
     showLoginErr();
   }
 }
 function showLoginErr(){
-  const e=document.getElementById('l_err');
-  e.style.display='block';
-  setTimeout(()=>e.style.display='none',3000);
+  const e = document.getElementById('l_err');
+  e.style.display = 'block';
+  setTimeout(() => e.style.display = 'none', 3000);
 }
 function doLogout(){
-  document.getElementById('loginScreen').style.display='grid';
-  document.getElementById('app').style.display='none';
+  _loggedIn = false;
+  document.getElementById('loginScreen').style.display = 'grid';
+  document.getElementById('app').style.display = 'none';
 }
-['l_u','l_p'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+['l_u','l_p'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); }));
 
 function setDateLabel(){
   document.getElementById('tb_date').textContent =
@@ -1507,10 +1583,12 @@ function submitBooking(){
     status:document.getElementById('f_stat').value,
     createdAt:new Date().toISOString()
   };
-  bks.unshift(bk); save();
-  toast(`Booking confirmed for ${name}`, 'ok');
-  setTimeout(()=>openTicket(bk.id),700);
-  initForm();
+  // Save to Firebase (real-time listener will update bks and re-render)
+  fbSet(bk).then(() => {
+    toast(`Booking confirmed for ${name}`, 'ok');
+    setTimeout(() => openTicket(bk.id), 700);
+    initForm();
+  }).catch(() => toast('Failed to save booking — check connection', 'err'));
 }
 
 /* ─── DASHBOARD ──────────────────────────────────────────────── */
@@ -1709,10 +1787,14 @@ function renderTable(){
   }).join('');
 }
 function cycleStatus(id){
-  const b=bks.find(x=>x.id===id); if(!b) return;
-  b.status=SCYC[b.status]||'confirmed';
-  save(); renderTable(); renderDash();
-  toast('Status → '+b.status,'ok');
+  const b = bks.find(x => x.id === id); if (!b) return;
+  const newStatus = SCYC[b.status] || 'confirmed';
+  // Optimistic local update
+  b.status = newStatus;
+  renderTable(); renderDash();
+  toast('Status → ' + newStatus, 'ok');
+  // Persist to Firebase
+  fbUpdate(id, {status: newStatus}).catch(() => toast('Sync error', 'err'));
 }
 
 /* ─── TICKET ──────────────────────────────────────────────────── */
@@ -1947,16 +2029,23 @@ function openPayM(id){
   document.getElementById('m_pay').classList.add('open');
 }
 function savePayUpdate(){
-  const b=bks.find(x=>x.id===payId); if(!b) return;
-  const amt=parseFloat(document.getElementById('pa_amt').value)||0;
-  if(!amt) return toast('Enter a valid amount','err');
-  b.paidAmount=(b.paidAmount||0)+amt;
-  b.balance=Math.max(0,b.totalAmount-b.paidAmount);
-  if(b.balance===0) b.payType='full';
-  const m=document.getElementById('pa_m').value; if(m) b.payMethod=m;
-  const t=document.getElementById('pa_t').value; if(t) b.txnId=t;
-  save(); renderTable(); renderDash(); closeM('m_pay');
-  toast('₹'+amt.toLocaleString('en-IN')+' payment recorded','ok');
+  const b = bks.find(x => x.id === payId); if (!b) return;
+  const amt = parseFloat(document.getElementById('pa_amt').value) || 0;
+  if (!amt) return toast('Enter a valid amount', 'err');
+  const newPaid  = (b.paidAmount || 0) + amt;
+  const newBal   = Math.max(0, b.totalAmount - newPaid);
+  const newType  = newBal === 0 ? 'full' : b.payType;
+  const method   = document.getElementById('pa_m').value || b.payMethod;
+  const txnId    = document.getElementById('pa_t').value || b.txnId;
+  // Optimistic local update
+  b.paidAmount = newPaid; b.balance = newBal; b.payType = newType;
+  if (method) b.payMethod = method;
+  if (txnId)  b.txnId    = txnId;
+  renderTable(); renderDash(); closeM('m_pay');
+  toast('₹' + amt.toLocaleString('en-IN') + ' payment recorded', 'ok');
+  // Persist to Firebase
+  fbUpdate(payId, {paidAmount: newPaid, balance: newBal, payType: newType, payMethod: method, txnId: txnId})
+    .catch(() => toast('Sync error', 'err'));
 }
 
 /* ─── CONFIRM ─────────────────────────────────────────────────── */
@@ -1967,13 +2056,20 @@ function openConf(id){
   document.getElementById('m_conf').classList.add('open');
 }
 function doMarkCancel(){
-  const b=bks.find(x=>x.id===delId);
-  if(b){b.status='cancelled';save();renderTable();renderDash();}
-  closeM('m_conf'); toast('Booking cancelled','info');
+  const b = bks.find(x => x.id === delId);
+  if (b) {
+    b.status = 'cancelled';
+    renderTable(); renderDash();
+    fbUpdate(delId, {status: 'cancelled'}).catch(() => toast('Sync error', 'err'));
+  }
+  closeM('m_conf');
+  toast('Booking cancelled', 'info');
 }
 function doDelete(){
-  bks=bks.filter(x=>x.id!==delId);
-  save(); renderTable(); renderDash(); closeM('m_conf'); toast('Booking deleted','info');
+  bks = bks.filter(x => x.id !== delId);
+  renderTable(); renderDash(); closeM('m_conf');
+  toast('Booking deleted', 'info');
+  fbDelete(delId).catch(() => toast('Sync error', 'err'));
 }
 
 /* ─── MODAL & TOAST ───────────────────────────────────────────── */
@@ -1991,5 +2087,13 @@ function toast(msg,type='ok'){
   clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3500);
 }
 </script>
+<!-- Firebase Sync Loader Overlay -->
+<div id="fbLoader" style="display:none; position:fixed; inset:0; background:rgba(15,22,19,0.85); z-index:10000; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:'DM Sans', sans-serif; backdrop-filter:blur(5px);">
+  <div style="width:40px; height:40px; border:3px solid rgba(255,255,255,0.1); border-top-color:#0D7C66; border-radius:50%; animation:fbSpin 1s linear infinite; margin-bottom:16px;"></div>
+  <div style="font-size:14px; font-weight:500; letter-spacing:1px; text-transform:uppercase;">Syncing bookings...</div>
+</div>
+<style>
+@keyframes fbSpin { to { transform: rotate(360deg); } }
+</style>
 </body>
 </html>
