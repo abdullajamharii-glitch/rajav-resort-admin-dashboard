@@ -5,6 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rajav Beach Resort — Management</title>
 <meta name="description" content="Admin dashboard for Rajav Beach Resort booking management, Cherai Beach, Kochi, Kerala">
+
+<!-- ─── CAPTURE beforeinstallprompt IMMEDIATELY (must be first!) ─── -->
+<script>
+// This MUST run before any other script so the event is never missed.
+window._pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  window._pwaPrompt = e;
+  // If the button already exists in DOM, show it now
+  var wrap = document.getElementById('installBtnWrap');
+  if (wrap) wrap.style.display = 'block';
+});
+window.addEventListener('appinstalled', function() {
+  window._pwaPrompt = null;
+  var wrap = document.getElementById('installBtnWrap');
+  if (wrap) wrap.style.display = 'none';
+});
+</script>
+
+<!-- ─── PWA ───────────────────────────────────────────────── -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0D7C66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rajav Admin">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<link rel="icon" type="image/png" href="/icon-512.png">
+
 <!-- Firebase SDKs (CDN - no build step needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -138,6 +167,82 @@ button { cursor: pointer; border: none; background: none; }
   font-size: 13px; color: #ff8a8a;
 }
 .login-hint { margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.18); }
+
+/* ─── INSTALL BUTTON ──────────────────────────────────────── */
+.install-btn-wrap {
+  margin-top: 20px;
+  display: none; /* shown by JS when installable */
+}
+.install-btn {
+  width: 100%; padding: 13px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(13,124,102,0.6);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.85);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  cursor: pointer; transition: all 0.25s;
+  position: relative; overflow: hidden;
+  animation: installPulse 2.5s ease-in-out infinite;
+}
+.install-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(13,124,102,0.15), rgba(20,184,166,0.08));
+  opacity: 0; transition: opacity 0.25s;
+}
+.install-btn:hover { border-color: var(--accent); color: white; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(13,124,102,0.3); }
+.install-btn:hover::before { opacity: 1; }
+.install-btn-icon { font-size: 18px; flex-shrink: 0; }
+@keyframes installPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(13,124,102,0.0); }
+  50%      { box-shadow: 0 0 0 5px rgba(13,124,102,0.2); }
+}
+
+/* ─── iOS INSTALL MODAL ───────────────────────────────────── */
+.ios-modal-overlay {
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+  display: none; align-items: flex-end; justify-content: center;
+  padding: 0 16px 32px;
+}
+.ios-modal-overlay.open { display: flex; }
+.ios-modal {
+  background: #1A2620; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 420px;
+  animation: slideUpModal 0.35s cubic-bezier(0.34,1.2,0.64,1);
+}
+@keyframes slideUpModal {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.ios-modal-title {
+  font-family: var(--serif); font-size: 20px; color: white;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+}
+.ios-modal-sub { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 22px; }
+.ios-steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+.ios-step {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: rgba(255,255,255,0.04); border-radius: 10px; padding: 12px 14px;
+}
+.ios-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: white;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ios-step-text { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+.ios-step-text strong { color: white; }
+.ios-step-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.ios-modal-close {
+  width: 100%; padding: 13px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; color: rgba(255,255,255,0.6);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s;
+}
+.ios-modal-close:hover { background: rgba(255,255,255,0.12); color: white; }
 @media(max-width: 720px) {
   #loginScreen { grid-template-columns: 1fr; }
   .login-visual { display: none; }
@@ -738,15 +843,48 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
     <input class="login-input" id="l_p" type="password" placeholder="Enter password" autocomplete="current-password">
     <button class="login-submit" onclick="doLogin()">Sign In</button>
     <div style="text-align:center; margin-top:14px;">
-      <a href="#" onclick="showForgot()" style="color:var(--accent); font-size:12px; text-decoration:none; font-weight:500;">Forgot Password?</a>
+      <a href="javascript:void(0)" onclick="showForgot()" style="color:var(--accent); font-size:12px; text-decoration:none; font-weight:500;">Forgot Password?</a>
     </div>
     <div class="login-err" id="l_err">Incorrect credentials. Please try again.</div>
-    <!-- password hint removed for security -->
+
+    <!-- INSTALL APP BUTTON -->
+    <div class="install-btn-wrap" id="installBtnWrap">
+      <button class="install-btn" id="installBtn" onclick="triggerInstall()">
+        <span class="install-btn-icon">⬇️</span>
+        <span>Install App on this Device</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ iOS INSTALL MODAL ═══════════ -->
+<div class="ios-modal-overlay" id="iosInstallModal">
+  <div class="ios-modal">
+    <div class="ios-modal-title">📲 Install Rajav Admin</div>
+    <div class="ios-modal-sub">Add this app to your iPhone home screen in 3 easy steps:</div>
+    <div class="ios-steps">
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <div class="ios-step-icon">⬆️</div>
+        <div class="ios-step-text">Tap the <strong>Share</strong> button at the bottom of your Safari browser</div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <div class="ios-step-icon">➕</div>
+        <div class="ios-step-text">Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <div class="ios-step-icon">✅</div>
+        <div class="ios-step-text">Tap <strong>"Add"</strong> — the app will appear on your home screen!</div>
+      </div>
+    </div>
+    <button class="ios-modal-close" onclick="document.getElementById('iosInstallModal').classList.remove('open')">Got it, thanks!</button>
   </div>
 </div>
 
 <!-- ═══════════ APP ═══════════ -->
-<div id="app">
+<div id="app" style="display:none;">
   <div class="shell">
 
     <!-- SIDEBAR OVERLAY (mobile) -->
@@ -1091,7 +1229,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
 </div><!-- /app -->
 
 <!-- FORGOT PASSWORD MODAL -->
-<div class="modal-overlay" id="m_forgot">
+<div class="modal-overlay" id="m_forgot" style="z-index:10000;">
   <div class="modal" style="max-width:400px;">
     <div class="modal-body">
       <div class="modal-title">Reset Password</div>
@@ -1100,7 +1238,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
       <div id="forgot_step1">
         <div class="field" style="margin-bottom:16px;">
           <label>Registered Phone Number</label>
-          <input id="fg_phone" type="tel" placeholder="e.g. 7736363578">
+          <input id="fg_phone" type="tel" placeholder="Enter registered phone number">
         </div>
         <button class="btn-primary" style="width:100%; justify-content:center;" onclick="sendOTP()">Send OTP</button>
       </div>
@@ -1126,7 +1264,7 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
       </div>
       
       <div class="modal-btns" style="justify-content:center; margin-top:18px;">
-        <button class="btn-keep" onclick="closeM('m_forgot')">Cancel</button>
+        <button class="btn-keep" onclick="closeForgot()">Cancel</button>
       </div>
     </div>
   </div>
@@ -1391,6 +1529,8 @@ let generatedOTP = null;
 const RECOVERY_NUMBER = '7736363578';
 
 function showForgot() {
+  // Always accessible — no login required
+  generatedOTP = null;
   document.getElementById('fg_phone').value = '';
   document.getElementById('fg_otp').value = '';
   document.getElementById('fg_new_pass').value = '';
@@ -1401,28 +1541,49 @@ function showForgot() {
   document.getElementById('m_forgot').classList.add('open');
 }
 
+function closeForgot() {
+  // Clear OTP so a partial flow cannot be exploited
+  generatedOTP = null;
+  document.getElementById('m_forgot').classList.remove('open');
+  // Make sure login screen stays visible if user is not logged in
+  if (!_loggedIn) {
+    document.getElementById('loginScreen').style.display = 'grid';
+    document.getElementById('app').style.display = 'none';
+  }
+}
+
 function sendOTP() {
   const ph = document.getElementById('fg_phone').value.replace(/\D/g,'');
-  if (!ph.endsWith(RECOVERY_NUMBER)) {
-    toast('Invalid recovery phone number.', 'err');
+  // Only exact match of the authorised recovery number is allowed
+  if (ph !== RECOVERY_NUMBER && !ph.endsWith(RECOVERY_NUMBER.slice(-10))) {
+    toast('This number is not authorised for recovery.', 'err');
     return;
   }
-  
+  // Extra safety: must be exactly the right digits
+  if (ph.replace(/^91/, '') !== RECOVERY_NUMBER) {
+    toast('This number is not authorised for recovery.', 'err');
+    return;
+  }
+
   // Generate random 6-digit OTP
   generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-  
+
   const msg = `Rajav Resort Admin Password Recovery OTP: ${generatedOTP}`;
   const waUrl = `https://wa.me/91${RECOVERY_NUMBER}?text=${encodeURIComponent(msg)}`;
-  
+
   window.open(waUrl, '_blank');
   toast('OTP sent to WhatsApp!', 'ok');
-  
+
   document.getElementById('forgot_step1').style.display = 'none';
   document.getElementById('forgot_step2').style.display = 'block';
 }
 
 function verifyOTP() {
   const entered = document.getElementById('fg_otp').value.trim();
+  if (!generatedOTP) {
+    toast('Session expired. Please request OTP again.', 'err');
+    return;
+  }
   if (entered === generatedOTP) {
     toast('OTP verified.', 'ok');
     document.getElementById('forgot_step2').style.display = 'none';
@@ -1451,7 +1612,7 @@ async function resetPassword() {
     .then(() => {
       hideLoader();
       toast('Password reset successfully!', 'ok');
-      closeM('m_forgot');
+      closeForgot();
     })
     .catch(() => {
       hideLoader();
@@ -2239,5 +2400,68 @@ function toast(msg,type='ok'){
 <style>
 @keyframes fbSpin { to { transform: rotate(360deg); } }
 </style>
+<!-- ─── PWA INSTALL + SERVICE WORKER ───────────────────────── -->
+<script>
+// ── Service Worker ────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[PWA] SW registered:', reg.scope))
+      .catch(err => console.warn('[PWA] SW failed:', err));
+  });
+}
+
+// ── Install Button Logic ──────────────────────────────────────
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+  || window.navigator.standalone === true;
+
+function showInstallBtn() {
+  const wrap = document.getElementById('installBtnWrap');
+  if (wrap) wrap.style.display = 'block';
+}
+function hideInstallBtn() {
+  const wrap = document.getElementById('installBtnWrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+function triggerInstall() {
+  if (isIOS) {
+    document.getElementById('iosInstallModal').classList.add('open');
+    return;
+  }
+  // Use the globally captured prompt (caught early in <head>)
+  if (window._pwaPrompt) {
+    window._pwaPrompt.prompt();
+    window._pwaPrompt.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') {
+        hideInstallBtn();
+        toast('App installed! 🎉', 'ok');
+      }
+      window._pwaPrompt = null;
+    });
+  }
+}
+
+// On DOM ready: show button if prompt already captured or iOS
+document.addEventListener('DOMContentLoaded', () => {
+  if (isInStandaloneMode) {
+    // Already running as installed PWA — hide button
+    hideInstallBtn();
+    return;
+  }
+  if (isIOS) {
+    showInstallBtn();
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.querySelector('span:last-child').textContent = 'Install on iPhone / iPad';
+    return;
+  }
+  // If beforeinstallprompt already fired (captured in head), show button now
+  if (window._pwaPrompt) {
+    showInstallBtn();
+  }
+  // If it fires later (some browsers delay it), the head listener will show it
+});
+</script>
 </body>
 </html>
