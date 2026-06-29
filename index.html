@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rajav Beach Resort — Management</title>
+<meta name="description" content="Admin dashboard for Rajav Beach Resort booking management, Cherai Beach, Kochi, Kerala">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ──────────────────────────────────────────────── */
+:root {
+  --bg:        #F5F5F0;
+  --surface:   #FFFFFF;
+  --sidebar:   #0F1613;
+  --accent:    #0D7C66;
+  --accent-light: #E6F5F0;
+  --accent2:   #E8A838;
+  --text:      #1A1A1A;
+  --muted:     #6B7280;
+  --border:    #E5E5E3;
+  --danger:    #C0392B;
+  --success:   #166534;
+  --info:      #1D4ED8;
+  --row-hover: #F8F8F5;
+  --serif:     'DM Serif Display', Georgia, serif;
+  --sans:      'DM Sans', system-ui, sans-serif;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ─── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+input, select, textarea, button { font-family: var(--sans); }
+button { cursor: pointer; border: none; background: none; }
+
+/* ─── ANIMATIONS ──────────────────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+.animate-in { animation: fadeIn 0.4s ease-out both; }
+.animate-up { animation: fadeInUp 0.5s ease-out both; }
+.animate-scale { animation: scaleIn 0.3s ease-out both; }
+
+/* ─── LOGIN ───────────────────────────────────────────────── */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--sidebar);
+}
+.login-visual {
+  position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #0a120f 0%, #0D7C66 100%);
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 56px;
+}
+.login-visual-text {
+  font-family: var(--serif); font-size: clamp(40px, 5vw, 64px);
+  color: rgba(255,255,255,0.08); line-height: 1.05;
+  position: absolute; top: 48px; left: 48px; right: 48px;
+  letter-spacing: -1px; user-select: none;
+}
+.login-visual-quote {
+  font-family: var(--serif); font-style: italic;
+  font-size: 20px; color: rgba(255,255,255,0.55); line-height: 1.5;
+  position: relative; z-index: 1;
+}
+.login-visual-loc {
+  font-size: 11px; font-weight: 500; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--accent); margin-top: 14px;
+}
+.login-visual-dots {
+  position: absolute; bottom: 0; left: 0; right: 0; top: 0; overflow: hidden; pointer-events: none;
+}
+.login-visual-dots::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 80% 110%, rgba(13,124,102,0.35) 0%, transparent 70%);
+}
+.login-panel {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 64px 56px; background: #0E1512;
+}
+.login-mark {
+  width: 44px; height: 44px; background: var(--accent); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 22px; color: white;
+  margin-bottom: 40px; letter-spacing: -0.5px;
+}
+.login-eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+}
+.login-heading {
+  font-family: var(--serif); font-size: 34px; color: white;
+  line-height: 1.1; margin-bottom: 36px; letter-spacing: -0.5px;
+}
+.login-field-label {
+  display: block; font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+  text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; margin-top: 20px;
+}
+.login-input {
+  width: 100%; padding: 13px 16px;
+  background: rgba(255,255,255,0.05); border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white; font-size: 14px; font-weight: 400; outline: none;
+  transition: border-color 0.2s;
+}
+.login-input::placeholder { color: rgba(255,255,255,0.2); }
+.login-input:focus { border-color: var(--accent); }
+.login-submit {
+  margin-top: 28px; width: 100%; padding: 14px; border-radius: 8px;
+  background: var(--accent); color: white;
+  font-size: 13px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; transition: all 0.2s;
+}
+.login-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+.login-err {
+  display: none; margin-top: 14px; padding: 11px 14px; border-radius: 8px;
+  background: rgba(192,57,43,0.15); border-left: 3px solid var(--danger);
+  font-size: 13px; color: #ff8a8a;
+}
+.login-hint { margin-top: 18px; font-size: 12px; color: rgba(255,255,255,0.18); }
+@media(max-width: 720px) {
+  #loginScreen { grid-template-columns: 1fr; }
+  .login-visual { display: none; }
+}
+
+/* ─── APP SHELL ───────────────────────────────────────────── */
+#app { display: none; min-height: 100vh; }
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+/* ─── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  background: var(--sidebar); display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; width: 240px; z-index: 100;
+  overflow: hidden; transition: transform 0.3s ease;
+}
+.sidebar-top { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.sidebar-mark {
+  width: 38px; height: 38px; background: var(--accent); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 18px; color: white; margin-bottom: 14px;
+}
+.sidebar-name { font-family: var(--serif); font-size: 16px; color: white; line-height: 1.2; }
+.sidebar-loc { font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-top: 3px; }
+.sidebar-nav { padding: 16px 12px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px; padding: 10px 14px;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.45);
+  cursor: pointer; transition: all 0.2s; margin-bottom: 2px;
+  letter-spacing: 0.1px; border-radius: 8px;
+}
+.nav-item:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.05); }
+.nav-item.active { color: white; background: rgba(13,124,102,0.25); }
+.nav-item.active .nav-dot { background: var(--accent); box-shadow: 0 0 8px rgba(13,124,102,0.5); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); flex-shrink: 0; transition: all 0.2s; }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.sidebar-watermark {
+  font-family: var(--serif); font-size: 72px; color: rgba(255,255,255,0.025);
+  line-height: 1; position: absolute; bottom: 80px; left: -8px;
+  writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+  user-select: none; pointer-events: none; letter-spacing: -2px;
+}
+.sidebar-bottom {
+  padding: 16px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sidebar-user { font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 500; }
+.btn-signout {
+  font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1); transition: all 0.15s;
+}
+.btn-signout:hover { color: white; border-color: rgba(255,255,255,0.3); }
+
+/* ─── HAMBURGER ───────────────────────────────────────────── */
+.hamburger {
+  display: none; width: 36px; height: 36px; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--bg); border: 1px solid var(--border); cursor: pointer;
+  flex-direction: column; gap: 4px; padding: 8px; transition: all 0.2s;
+}
+.hamburger span {
+  display: block; width: 18px; height: 2px; background: var(--text); border-radius: 2px;
+  transition: all 0.3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 99; opacity: 0; transition: opacity 0.3s;
+}
+.sidebar-overlay.show { display: block; opacity: 1; }
+
+/* ─── MAIN ────────────────────────────────────────────────── */
+.main { margin-left: 240px; min-height: 100vh; display: flex; flex-direction: column; }
+.topbar {
+  height: 60px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 32px;
+  justify-content: space-between; position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-breadcrumb { font-size: 13px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.topbar-breadcrumb strong { color: var(--text); font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-date { font-size: 12px; color: var(--muted); }
+
+.content { padding: 28px 32px; flex: 1; }
+
+/* ─── PAGES ───────────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.35s ease-out; }
+.page-heading {
+  font-family: var(--serif); font-size: 26px; color: var(--text);
+  margin-bottom: 24px; letter-spacing: -0.3px;
+}
+
+/* ─── STATS ROW ───────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface); padding: 22px 24px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  transition: all 0.25s; position: relative; overflow: hidden;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), #14B8A6);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0; transition: opacity 0.3s;
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.stat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.stat-icon.s1 { background: #EEF2FF; color: #4F46E5; }
+.stat-icon.s2 { background: #FEF3C7; color: #D97706; }
+.stat-icon.s3 { background: #DCFCE7; color: #16A34A; }
+.stat-icon.s4 { background: #E6F5F0; color: #0D7C66; }
+.stat-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted);
+}
+.stat-value {
+  font-family: var(--serif); font-size: 32px; color: var(--text);
+  line-height: 1; animation: countUp 0.5s ease-out both;
+}
+.stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ─── DASHBOARD GRID ──────────────────────────────────────── */
+.dash-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 20px; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  overflow: hidden; transition: box-shadow 0.25s;
+}
+.panel:hover { box-shadow: var(--shadow-md); }
+.panel-header {
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
+.panel-meta { font-size: 11px; color: var(--muted); }
+.panel-body { padding: 4px 0; }
+.room-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 22px; border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.room-row:last-child { border-bottom: none; }
+.room-row:hover { background: var(--row-hover); }
+.room-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.room-rate { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.status-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+.sl-avail { color: var(--success); }
+.sl-booked { color: var(--danger); }
+.sl-in { color: var(--info); }
+.dot-avail { background: #22C55E; }
+.dot-booked { background: var(--danger); }
+.dot-in { background: var(--info); }
+
+.recent-row {
+  display: flex; align-items: center; gap: 14px; padding: 13px 22px;
+  border-bottom: 1px solid var(--border); transition: background 0.12s;
+}
+.recent-row:last-child { border-bottom: none; }
+.recent-row:hover { background: var(--row-hover); }
+.recent-avatar {
+  width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), #14B8A6);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; color: white; flex-shrink: 0;
+  font-family: var(--serif);
+}
+.recent-info { flex: 1; min-width: 0; }
+.recent-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.recent-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.recent-amount { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+/* ─── FORM / WIZARD ───────────────────────────────────────── */
+.form-wrap { max-width: 900px; }
+
+/* Stepper */
+.stepper {
+  display: flex; align-items: center; margin-bottom: 28px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 24px;
+  box-shadow: var(--shadow-sm); overflow-x: auto;
+}
+.step-item {
+  display: flex; align-items: center; gap: 10px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.step-num {
+  width: 30px; height: 30px; border-radius: 50%; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--muted); border: 2px solid var(--border);
+  transition: all 0.3s; flex-shrink: 0;
+}
+.step-item.active .step-num {
+  background: var(--accent); color: white; border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(13,124,102,0.15);
+}
+.step-item.done .step-num {
+  background: #DCFCE7; color: var(--success); border-color: #BBF7D0;
+}
+.step-label { font-size: 12px; font-weight: 500; color: var(--muted); transition: color 0.3s; }
+.step-item.active .step-label { color: var(--text); font-weight: 600; }
+.step-item.done .step-label { color: var(--success); }
+.step-line {
+  flex: 1; height: 2px; background: var(--border); margin: 0 14px;
+  min-width: 20px; transition: background 0.3s;
+}
+.step-line.done { background: var(--success); }
+
+/* Form blocks */
+.form-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  margin-bottom: 2px; overflow: hidden;
+}
+.wizard-step { display: none; animation: fadeIn 0.35s ease-out; }
+.wizard-step.active { display: block; }
+.form-block-header {
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.form-block-num {
+  width: 24px; height: 24px; background: var(--accent); color: white;
+  font-size: 11px; font-weight: 700; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.form-block-title { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text); }
+.form-block-body { padding: 24px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.field input, .field select {
+  padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); font-size: 13px; color: var(--text);
+  outline: none; transition: all 0.2s; -webkit-appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(13,124,102,0.08); }
+.field input[readonly] { background: #F0F0EE; color: var(--accent); font-weight: 600; cursor: default; }
+.field .hint { font-size: 11px; color: var(--muted); }
+.field textarea {
+  padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); font-size: 13px; color: var(--text);
+  outline: none; resize: none; min-height: 64px; transition: all 0.2s;
+}
+.field textarea:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(13,124,102,0.08); }
+
+/* Wizard navigation */
+.wizard-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);
+}
+.btn-wizard {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 24px; font-size: 13px; font-weight: 600;
+  border-radius: 8px; transition: all 0.2s; letter-spacing: 0.3px;
+}
+.btn-prev {
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+}
+.btn-prev:hover { background: var(--surface); border-color: var(--text); }
+.btn-next {
+  background: var(--accent); color: white;
+}
+.btn-next:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,124,102,0.3); }
+
+/* Room selector */
+.room-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.room-sel-card {
+  border: 2px solid var(--border); padding: 18px; cursor: pointer;
+  transition: all 0.2s; background: var(--bg); border-radius: var(--radius);
+  position: relative;
+}
+.room-sel-card:hover { border-color: var(--accent); background: white; transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.room-sel-card.picked {
+  border-color: var(--accent); background: white;
+  box-shadow: 0 0 0 3px rgba(13,124,102,0.12), var(--shadow-md);
+}
+.room-sel-card.picked::after {
+  content: '✓'; position: absolute; top: 10px; right: 12px;
+  width: 22px; height: 22px; background: var(--accent); color: white;
+  border-radius: 50%; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.room-sel-card.blocked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.rsc-icon { font-size: 24px; margin-bottom: 10px; }
+.rsc-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.rsc-rate { font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 6px; font-family: var(--serif); }
+.rsc-avail { font-size: 11px; font-weight: 600; margin-top: 8px; letter-spacing: 0.5px; }
+.rsc-avail.yes { color: #16A34A; }
+.rsc-avail.no { color: var(--danger); }
+
+.conflict-warn {
+  display: none; margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+  background: #FEF3C7; border-left: 3px solid #D97706;
+  font-size: 12px; color: #92400E;
+}
+
+/* Review Step */
+.review-section { margin-bottom: 20px; }
+.review-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.review-item { display: flex; justify-content: space-between; padding: 6px 0; }
+.review-label { font-size: 12px; color: var(--muted); }
+.review-value { font-size: 12px; font-weight: 600; color: var(--text); }
+
+/* Pay type */
+.paytype-row { display: flex; gap: 0; }
+.paytype-btn {
+  flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 0;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--muted); transition: all 0.15s; margin-right: -1px;
+}
+.paytype-btn:first-child { border-radius: 8px 0 0 8px; }
+.paytype-btn:last-child { border-radius: 0 8px 8px 0; }
+.paytype-btn:hover { border-color: var(--accent); color: var(--accent); z-index: 1; }
+.paytype-btn.on { background: var(--accent); color: white; border-color: var(--accent); z-index: 2; }
+
+/* Submit */
+.btn-primary {
+  padding: 13px 36px; background: var(--accent); color: white; border-radius: 8px;
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,124,102,0.3); }
+
+/* ─── CALENDAR ────────────────────────────────────────────── */
+.cal-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.cal-topbar { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.cal-nav { display: flex; align-items: center; gap: 16px; }
+.cal-nav-btn { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--muted); transition: all 0.15s; }
+.cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.cal-month-label { font-family: var(--serif); font-size: 20px; color: var(--text); min-width: 170px; text-align: center; }
+.cal-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+.cal-leg { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-weight: 500; }
+.cal-leg-dot { width: 9px; height: 9px; border-radius: 3px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+.cal-day-head { padding: 10px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.cal-cell { min-height: 92px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px; transition: background 0.12s; }
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell:hover { background: var(--row-hover); }
+.cal-cell.other { opacity: 0.25; }
+.cal-cell.today .cal-num { background: var(--accent); color: white; width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.cal-num { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; display: inline-block; }
+.cal-chip { font-size: 9px; font-weight: 600; padding: 2px 6px; margin-bottom: 2px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px; border-radius: 3px; }
+.ck-j  { background: #FEE2E2; color: #991B1B; }
+.ck-b  { background: #DBEAFE; color: #1E40AF; }
+.ck-b1 { background: #DCFCE7; color: #166534; }
+.ck-b2 { background: #D1FAE5; color: #065F46; }
+.ck-e1 { background: #EDE9FE; color: #5B21B6; }
+.ck-e2 { background: #FCE7F3; color: #9D174D; }
+
+/* ─── TABLE ───────────────────────────────────────────────── */
+.tbl-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.tbl-topbar { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.filter-row { display: flex; gap: 0; flex-wrap: wrap; }
+.flt { padding: 7px 16px; border: 1px solid var(--border); font-size: 12px; font-weight: 500; color: var(--muted); margin-right: -1px; transition: all 0.15s; }
+.flt:first-child { border-radius: 8px 0 0 8px; }
+.flt:last-child { border-radius: 0 8px 8px 0; }
+.flt:hover { border-color: var(--accent); color: var(--accent); z-index: 1; }
+.flt.on { background: var(--text); color: white; border-color: var(--text); z-index: 2; }
+.tbl-search { padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 13px; color: var(--text); outline: none; min-width: 220px; transition: all 0.15s; }
+.tbl-search:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(13,124,102,0.08); }
+table { width: 100%; border-collapse: collapse; }
+thead th { text-align: left; padding: 10px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--border); }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--row-hover); }
+td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
+.td-name { font-weight: 600; color: var(--text); }
+.td-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.room-tag { font-size: 10px; font-weight: 700; padding: 3px 9px; letter-spacing: 0.5px; text-transform: uppercase; color: white; display: inline-block; border-radius: 4px; }
+.tag-j  { background: #B91C1C; }
+.tag-b  { background: #1D4ED8; }
+.tag-b1 { background: #15803D; }
+.tag-b2 { background: #065F46; }
+.tag-e1 { background: #6D28D9; }
+.tag-e2 { background: #9D174D; }
+.nights-tag { background: var(--text); color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; letter-spacing: 0.5px; border-radius: 4px; }
+.pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 9px; letter-spacing: 0.5px; text-transform: uppercase; border-radius: 4px; }
+.pill-full    { background: #DCFCE7; color: #166534; }
+.pill-advance { background: #FEF9C3; color: #854D0E; }
+.pill-pending { background: #FEE2E2; color: #991B1B; }
+.pill-conf    { background: #DCFCE7; color: #166534; }
+.pill-in      { background: #DBEAFE; color: #1E40AF; }
+.pill-out     { background: #F3F4F6; color: #4B5563; }
+.pill-canc    { background: #FEE2E2; color: #991B1B; }
+.act { display: flex; gap: 5px; flex-wrap: wrap; }
+.ab { padding: 5px 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; border: 1px solid; transition: all 0.15s; white-space: nowrap; border-radius: 4px; }
+.ab-next { border-color: var(--border); color: var(--muted); }
+.ab-next:hover { border-color: var(--text); color: var(--text); }
+.ab-tk   { border-color: #BFDBFE; color: #1D4ED8; }
+.ab-tk:hover   { background: #1D4ED8; color: white; border-color: #1D4ED8; }
+.ab-bill { border-color: #BBF7D0; color: #15803D; }
+.ab-bill:hover { background: #15803D; color: white; border-color: #15803D; }
+.ab-pay  { border-color: #FDE68A; color: #92400E; }
+.ab-pay:hover  { background: #D97706; color: white; border-color: #D97706; }
+.ab-del  { border-color: #FECACA; color: #B91C1C; }
+.ab-del:hover  { background: #B91C1C; color: white; border-color: #B91C1C; }
+.tbl-empty { padding: 60px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ─── MOBILE BOOKING CARDS ────────────────────────────────── */
+.mobile-cards { display: none; }
+.booking-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); animation: fadeInUp 0.3s ease-out both;
+}
+.bc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.bc-guest { display: flex; align-items: center; gap: 12px; }
+.bc-avatar {
+  width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), #14B8A6);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: white; font-family: var(--serif);
+}
+.bc-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.bc-phone { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.bc-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.bc-detail-item {}
+.bc-detail-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.bc-detail-value { font-size: 13px; font-weight: 500; color: var(--text); margin-top: 2px; }
+.bc-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+.bc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ─── MODALS ──────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500;
+  display: none; align-items: center; justify-content: center; padding: 24px;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal { background: white; max-width: 500px; width: 100%; max-height: 92vh; overflow-y: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); animation: scaleIn 0.25s ease-out; }
+
+/* Ticket */
+.tk-top { background: var(--sidebar); padding: 32px 28px 0; position: relative; overflow: hidden; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.tk-top::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: white; clip-path: ellipse(55% 100% at 50% 100%); }
+.tk-logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.tk-mark { width: 28px; height: 28px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 14px; color: white; }
+.tk-resort { font-family: var(--serif); font-size: 16px; color: white; }
+.tk-loc-tag { font-size: 9px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); display: block; margin-top: 1px; }
+.tk-bkid { position: absolute; top: 28px; right: 22px; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.25); text-transform: uppercase; }
+.tk-body { padding: 28px 28px 22px; }
+.tk-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.tk-guest { font-family: var(--serif); font-size: 26px; color: var(--text); margin-bottom: 20px; letter-spacing: -0.3px; }
+.tk-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.tk-meta-item .tk-meta-l { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.tk-meta-item .tk-meta-v { font-size: 13px; font-weight: 600; color: var(--text); }
+.tk-divider { border: none; border-top: 1px dashed var(--border); margin: 18px 0; }
+.tk-pay-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.tk-pay-table td { padding: 6px 0; font-size: 12px; border-bottom: 1px solid #F5F5F3; }
+.tk-pay-table td:last-child { text-align: right; font-weight: 600; }
+.tk-pay-table tr:last-child td { border-bottom: none; }
+.tk-pay-total td { font-size: 14px; font-weight: 700; color: var(--accent); padding-top: 10px; }
+.tk-footer { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.8; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px; }
+.tk-barcode { font-family: monospace; font-size: 12px; letter-spacing: 4px; color: var(--border); text-align: center; margin-top: 10px; }
+.tk-actions { padding: 16px 22px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-pdf { flex: 1; padding: 11px; background: var(--text); color: white; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-pdf:hover { opacity: 0.8; }
+.btn-wa { flex: 1; padding: 11px; background: #25D366; color: white; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-wa:hover { opacity: 0.85; }
+.btn-close-m { padding: 11px 18px; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); transition: all 0.15s; }
+.btn-close-m:hover { border-color: var(--text); color: var(--text); }
+
+/* Bill / Pay / Confirm modal body */
+.modal-body { padding: 28px; }
+.modal-title { font-family: var(--serif); font-size: 22px; color: var(--text); margin-bottom: 6px; }
+.modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+.bill-rows { margin-bottom: 16px; }
+.bill-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.bill-row:last-child { border-bottom: none; }
+.bill-row-lbl { color: var(--muted); }
+.bill-row-val { font-weight: 600; color: var(--text); }
+.bill-total-row { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 15px; font-weight: 700; color: var(--text); border-top: 2px solid var(--text); margin-top: 4px; }
+.modal-btns { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+.conf-btns { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+.btn-keep { padding: 10px 18px; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); transition: all 0.15s; }
+.btn-keep:hover { border-color: var(--text); color: var(--text); }
+.btn-cancel-booking { padding: 10px 18px; background: #D97706; color: white; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.btn-del { padding: 10px 18px; background: var(--danger); color: white; border-radius: 8px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ─── TOAST ───────────────────────────────────────────────── */
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; min-width: 260px; max-width: 340px; transform: translateY(80px); opacity: 0; transition: all 0.32s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; }
+.toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.toast-inner { background: var(--text); color: white; padding: 14px 18px; border-radius: 10px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); }
+.toast-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.toast.ok .toast-icon { color: #4ADE80; }
+.toast.err .toast-icon { color: #F87171; }
+.toast.info .toast-icon { color: #60A5FA; }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:900px){
+  .shell { grid-template-columns: 1fr; }
+  .sidebar {
+    transform: translateX(-100%); width: 260px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .hamburger { display: flex; }
+  .sidebar-watermark { display: none; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .grid2 { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr 1fr; }
+  .room-grid { grid-template-columns: 1fr 1fr; }
+  .content { padding: 20px 16px; }
+  .topbar { padding: 0 16px; }
+
+  /* Mobile cards for bookings */
+  .desktop-table { display: none; }
+  .mobile-cards { display: block; }
+  .tbl-search { min-width: 100%; margin-top: 8px; }
+  .filter-row { flex-wrap: wrap; }
+  .flt { flex: 1; min-width: 0; text-align: center; font-size: 11px; padding: 7px 8px; }
+  .flt:first-child { border-radius: 6px 0 0 6px; }
+  .flt:last-child { border-radius: 0 6px 6px 0; }
+
+  /* Stepper mobile */
+  .stepper { padding: 14px 16px; gap: 0; }
+  .step-label { display: none; }
+  .step-line { min-width: 12px; margin: 0 8px; }
+  .step-num { width: 28px; height: 28px; font-size: 11px; }
+}
+@media(max-width:560px){
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 18px; }
+  .stat-value { font-size: 26px; }
+  .stat-icon { width: 34px; height: 34px; font-size: 16px; }
+  .grid3 { grid-template-columns: 1fr; }
+  .room-grid { grid-template-columns: 1fr 1fr; }
+  .page-heading { font-size: 22px; }
+  .bc-details { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="loginScreen">
+  <div class="login-visual">
+    <div class="login-visual-dots"></div>
+    <div class="login-visual-text">Rajav<br>Beach<br>Resort</div>
+    <div>
+      <div class="login-visual-quote">"Where the Arabian Sea<br>meets quiet luxury."</div>
+      <div class="login-visual-loc">Cherai Beach · Kochi, Kerala</div>
+    </div>
+  </div>
+  <div class="login-panel">
+    <div class="login-mark">R</div>
+    <div class="login-eyebrow">Management Portal</div>
+    <div class="login-heading">Sign in to<br>your workspace</div>
+    <label class="login-field-label" for="l_u">Username</label>
+    <input class="login-input" id="l_u" type="text" placeholder="Enter username" autocomplete="username">
+    <label class="login-field-label" for="l_p">Password</label>
+    <input class="login-input" id="l_p" type="password" placeholder="Enter password" autocomplete="current-password">
+    <button class="login-submit" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="l_err">Incorrect credentials. Please try again.</div>
+    <div class="login-hint">admin / rajav2024</div>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app">
+  <div class="shell">
+
+    <!-- SIDEBAR OVERLAY (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-mark">R</div>
+        <div class="sidebar-name">Rajav Beach Resort</div>
+        <div class="sidebar-loc">Cherai Beach · Kochi</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" onclick="goPage('dash',this)">
+          <span class="nav-dot"></span><span class="nav-icon">◈</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="goPage('book',this)">
+          <span class="nav-dot"></span><span class="nav-icon">＋</span> New Booking
+        </div>
+        <div class="nav-item" onclick="goPage('cal',this)">
+          <span class="nav-dot"></span><span class="nav-icon">◷</span> Calendar
+        </div>
+        <div class="nav-item" onclick="goPage('list',this)">
+          <span class="nav-dot"></span><span class="nav-icon">≡</span> All Bookings
+        </div>
+      </nav>
+      <div class="sidebar-watermark">RAJAV</div>
+      <div class="sidebar-bottom">
+        <span class="sidebar-user" id="sb_user">Admin</span>
+        <button class="btn-signout" onclick="doLogout()">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar-breadcrumb">
+            Rajav Beach Resort &nbsp;/&nbsp; <strong id="tb_page">Dashboard</strong>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <span class="topbar-date" id="tb_date"></span>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- DASHBOARD -->
+        <div class="page active" id="pg_dash">
+          <div class="page-heading">Dashboard</div>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-top">
+                <div class="stat-label">Total Bookings</div>
+                <div class="stat-icon s1">📋</div>
+              </div>
+              <div class="stat-value" id="s_total">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-top">
+                <div class="stat-label">Occupied Today</div>
+                <div class="stat-icon s2">🏨</div>
+              </div>
+              <div class="stat-value" id="s_occ">0</div>
+              <div class="stat-sub">of 6 rooms</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-top">
+                <div class="stat-label">Checked In</div>
+                <div class="stat-icon s3">✅</div>
+              </div>
+              <div class="stat-value" id="s_in">0</div>
+              <div class="stat-sub">active guests</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-top">
+                <div class="stat-label">Revenue Collected</div>
+                <div class="stat-icon s4">💰</div>
+              </div>
+              <div class="stat-value" id="s_rev" style="font-size:24px">₹0</div>
+            </div>
+          </div>
+          <div class="dash-grid">
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">ROOM STATUS</div>
+                <div class="panel-meta" id="d_today"></div>
+              </div>
+              <div class="panel-body" id="d_rooms"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">RECENT BOOKINGS</div>
+                <div class="panel-meta" style="cursor:pointer;color:var(--accent);font-weight:600"
+                  onclick="goPage('list',document.querySelectorAll('.nav-item')[3])">View all →</div>
+              </div>
+              <div class="panel-body" id="d_recent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW BOOKING (Multi-Step Wizard) -->
+        <div class="page" id="pg_book">
+          <div class="page-heading">New Reservation</div>
+          <div class="form-wrap">
+
+            <!-- Stepper -->
+            <div class="stepper" id="stepper">
+              <div class="step-item active" data-step="1">
+                <div class="step-num">1</div>
+                <span class="step-label">Room</span>
+              </div>
+              <div class="step-line" data-line="1"></div>
+              <div class="step-item" data-step="2">
+                <div class="step-num">2</div>
+                <span class="step-label">Guest</span>
+              </div>
+              <div class="step-line" data-line="2"></div>
+              <div class="step-item" data-step="3">
+                <div class="step-num">3</div>
+                <span class="step-label">Stay</span>
+              </div>
+              <div class="step-line" data-line="3"></div>
+              <div class="step-item" data-step="4">
+                <div class="step-num">4</div>
+                <span class="step-label">Payment</span>
+              </div>
+              <div class="step-line" data-line="4"></div>
+              <div class="step-item" data-step="5">
+                <div class="step-num">5</div>
+                <span class="step-label">Review</span>
+              </div>
+            </div>
+
+            <!-- Step 1: Select Room -->
+            <div class="wizard-step active" id="ws_1">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">1</div>
+                  <div class="form-block-title">Select Room</div>
+                </div>
+                <div class="form-block-body">
+                  <div class="room-grid" id="room_grid"></div>
+                  <div class="conflict-warn" id="conflict_warn">⚠ This room is already booked for the selected dates.</div>
+                  <div class="wizard-nav">
+                    <div></div>
+                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Guest Details →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Guest Details -->
+            <div class="wizard-step" id="ws_2">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">2</div>
+                  <div class="form-block-title">Guest Details</div>
+                </div>
+                <div class="form-block-body">
+                  <div class="grid2">
+                    <div class="field"><label>Guest Name *</label><input id="f_name" type="text" placeholder="Full name"></div>
+                    <div class="field"><label>Phone / WhatsApp *</label><input id="f_phone" type="tel" placeholder="+91 98765 43210"></div>
+                    <div class="field"><label>Email</label><input id="f_email" type="email" placeholder="guest@email.com"></div>
+                    <div class="field"><label>Address</label><input id="f_addr" type="text" placeholder="City, State"></div>
+                    <div class="field"><label>ID Type</label>
+                      <select id="f_idt"><option value="">Select</option><option>Aadhaar</option><option>Passport</option><option>Voter ID</option><option>Driving Licence</option><option>PAN Card</option></select>
+                    </div>
+                    <div class="field"><label>ID Number</label><input id="f_idn" type="text" placeholder="ID number"></div>
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back</button>
+                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Stay Details →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Stay Details -->
+            <div class="wizard-step" id="ws_3">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">3</div>
+                  <div class="form-block-title">Stay Details</div>
+                </div>
+                <div class="form-block-body">
+                  <div class="grid2">
+                    <div class="field"><label>Check-in Date *</label><input id="f_ci" type="date" onchange="onDateChange()"></div>
+                    <div class="field"><label>Check-out Date *</label><input id="f_co" type="date" onchange="onDateChange()"></div>
+                    <div class="field"><label>Number of Guests</label><input id="f_guests" type="number" min="1" max="8" placeholder="2"></div>
+                    <div class="field"><label>Room Rate (per night)</label><input id="f_rate" type="text" readonly placeholder="Auto-filled"></div>
+                    <div class="field"><label>Total Amount</label><input id="f_total" type="text" readonly placeholder="Auto-calculated"></div>
+                    <div class="field"><label>Special Requests</label><input id="f_notes" type="text" placeholder="e.g. early check-in, anniversary"></div>
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back</button>
+                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Payment →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Payment Details -->
+            <div class="wizard-step" id="ws_4">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">4</div>
+                  <div class="form-block-title">Payment Details</div>
+                </div>
+                <div class="form-block-body">
+                  <div class="grid3" style="margin-bottom:18px">
+                    <div class="field">
+                      <label>Payment Type *</label>
+                      <div class="paytype-row">
+                        <button class="paytype-btn on" id="pt_adv" onclick="setPT('advance')">Advance</button>
+                        <button class="paytype-btn" id="pt_full" onclick="setPT('full')">Full</button>
+                        <button class="paytype-btn" id="pt_pend" onclick="setPT('pending')">Pending</button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label>Amount Paid (₹)</label>
+                      <input id="f_paid" type="number" placeholder="0" oninput="calcBal()">
+                      <span class="hint" id="f_hint"></span>
+                    </div>
+                    <div class="field">
+                      <label>Balance Due</label>
+                      <input id="f_bal" type="text" readonly placeholder="Auto-calculated">
+                    </div>
+                  </div>
+                  <div class="grid2">
+                    <div class="field"><label>Payment Method</label>
+                      <select id="f_pm"><option value="">Select method</option><option>Cash</option><option>UPI / GPay</option><option>Bank Transfer</option><option>Credit Card</option><option>Debit Card</option><option>Cheque</option></select>
+                    </div>
+                    <div class="field"><label>Transaction Reference</label>
+                      <input id="f_txn" type="text" placeholder="UPI ref, transaction ID…">
+                    </div>
+                  </div>
+                  <div class="grid2" style="margin-top:18px">
+                    <div class="field" style="max-width:220px">
+                      <label>Booking Status</label>
+                      <select id="f_stat"><option value="confirmed">Confirmed</option><option value="checkedin">Checked In</option></select>
+                    </div>
+                  </div>
+                  <div class="wizard-nav">
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back</button>
+                    <button class="btn-wizard btn-next" onclick="nextStep()">Next — Review →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Review & Confirm -->
+            <div class="wizard-step" id="ws_5">
+              <div class="form-block">
+                <div class="form-block-header">
+                  <div class="form-block-num">5</div>
+                  <div class="form-block-title">Review & Confirm</div>
+                </div>
+                <div class="form-block-body">
+                  <div id="review_content"></div>
+                  <div class="wizard-nav" style="border-top:none; padding-top:8px;">
+                    <button class="btn-wizard btn-prev" onclick="prevStep()">← Back to Edit</button>
+                    <button class="btn-primary" onclick="submitBooking()">✓ Confirm Reservation</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CALENDAR -->
+        <div class="page" id="pg_cal">
+          <div class="page-heading">Availability Calendar</div>
+          <div class="cal-container">
+            <div class="cal-topbar">
+              <div class="cal-nav">
+                <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                <div class="cal-month-label" id="cal_lbl"></div>
+                <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+              </div>
+              <div class="cal-legend">
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#B91C1C"></div>Jacuzzi</div>
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#1D4ED8"></div>Beach View</div>
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#15803D"></div>Balcony 1</div>
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#065F46"></div>Balcony 2</div>
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#6D28D9"></div>Economy 1</div>
+                <div class="cal-leg"><div class="cal-leg-dot" style="background:#9D174D"></div>Economy 2</div>
+              </div>
+            </div>
+            <div class="cal-grid">
+              <div class="cal-day-head">Sun</div><div class="cal-day-head">Mon</div>
+              <div class="cal-day-head">Tue</div><div class="cal-day-head">Wed</div>
+              <div class="cal-day-head">Thu</div><div class="cal-day-head">Fri</div>
+              <div class="cal-day-head">Sat</div>
+              <div id="cal_body" style="display:contents"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALL BOOKINGS -->
+        <div class="page" id="pg_list">
+          <div class="page-heading">All Bookings</div>
+          <div class="tbl-container">
+            <div class="tbl-topbar">
+              <div class="filter-row">
+                <button class="flt on" onclick="setFilter('all',this)">All</button>
+                <button class="flt" onclick="setFilter('confirmed',this)">Confirmed</button>
+                <button class="flt" onclick="setFilter('checkedin',this)">Checked In</button>
+                <button class="flt" onclick="setFilter('checkedout',this)">Checked Out</button>
+                <button class="flt" onclick="setFilter('cancelled',this)">Cancelled</button>
+              </div>
+              <input class="tbl-search" id="tbl_q" type="text" placeholder="Search guest, room, phone…" oninput="renderTable()">
+            </div>
+            <!-- Desktop table -->
+            <div class="desktop-table" style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th>
+                  <th>Nights</th><th>Total</th><th>Paid</th><th>Balance</th>
+                  <th>Payment</th><th>Status</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="tbl_body"></tbody>
+              </table>
+            </div>
+            <!-- Mobile cards -->
+            <div class="mobile-cards" id="mobile_cards"></div>
+            <div class="tbl-empty" id="tbl_empty" style="display:none">No bookings found.</div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /shell -->
+</div><!-- /app -->
+
+<!-- TICKET MODAL -->
+<div class="modal-overlay" id="m_ticket">
+  <div class="modal">
+    <div id="tk_content"></div>
+    <div class="tk-actions">
+      <button class="btn-pdf" onclick="makePDF('ticket')">↓ Download PDF</button>
+      <button class="btn-wa" onclick="sendWA('ticket')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp + PDF
+      </button>
+      <button class="btn-close-m" onclick="closeM('m_ticket')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL MODAL -->
+<div class="modal-overlay" id="m_bill">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="modal-title">Payment Bill</div>
+      <div class="modal-sub" id="bill_sub"></div>
+      <div id="bill_rows"></div>
+      <div class="modal-btns">
+        <button class="btn-pdf" onclick="makePDF('bill')">↓ Download PDF</button>
+        <button class="btn-wa" onclick="sendWA('bill')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp + PDF
+        </button>
+        <button class="btn-close-m" onclick="closeM('m_bill')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAY MODAL -->
+<div class="modal-overlay" id="m_pay">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="modal-title">Record Payment</div>
+      <div class="modal-sub">Update payment for this booking</div>
+      <div id="pay_content"></div>
+      <div class="modal-btns" style="margin-top:18px">
+        <button class="btn-primary" onclick="savePayUpdate()">Save Payment</button>
+        <button class="btn-close-m" onclick="closeM('m_pay')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="m_conf">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="modal-title">Manage Booking</div>
+      <div class="modal-sub" id="conf_sub"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Choose an action below:</p>
+      <div class="conf-btns">
+        <button class="btn-keep" onclick="closeM('m_conf')">Keep</button>
+        <button class="btn-cancel-booking" onclick="doMarkCancel()">Cancel Booking</button>
+        <button class="btn-del" onclick="doDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-inner">
+    <div class="toast-icon" id="t_icon"></div>
+    <span id="t_msg"></span>
+  </div>
+</div>
+
+<script>
+/* ─── ROOMS ─────────────────────────────────────────────────── */
+const ROOMS = [
+  {id:'jacuzzi', name:'Jacuzzi Room',    rate:12000, icon:'🛁', ck:'ck-j',  tag:'tag-j',  color:'#B91C1C', label:'Premium'},
+  {id:'beach',   name:'Beach View Room', rate:10000, icon:'🌊', ck:'ck-b',  tag:'tag-b',  color:'#1D4ED8', label:'Sea View'},
+  {id:'balcony1',name:'Balcony Room 1',  rate:5000,  icon:'🌿', ck:'ck-b1', tag:'tag-b1', color:'#15803D', label:'Comfort'},
+  {id:'balcony2',name:'Balcony Room 2',  rate:5000,  icon:'🌿', ck:'ck-b2', tag:'tag-b2', color:'#065F46', label:'Comfort'},
+  {id:'economy1',name:'Economy Room 1',  rate:3000,  icon:'🏠', ck:'ck-e1', tag:'tag-e1', color:'#6D28D9', label:'Value'},
+  {id:'economy2',name:'Economy Room 2',  rate:3000,  icon:'🏠', ck:'ck-e2', tag:'tag-e2', color:'#9D174D', label:'Value'},
+];
+const CREDS = {admin:'rajav2024', manager:'cherai123'};
+
+/* ─── STATE ──────────────────────────────────────────────────── */
+let bks     = JSON.parse(localStorage.getItem('rajav_v4')||'[]');
+let selR    = null, payT = 'advance', filt = 'all';
+let calM    = new Date(); calM.setDate(1);
+let activeBk= null, delId = null, payId = null;
+let currentStep = 1;
+const TOTAL_STEPS = 5;
+const save  = () => localStorage.setItem('rajav_v4', JSON.stringify(bks));
+
+/* ─── UTILS ──────────────────────────────────────────────────── */
+const today  = () => new Date().toISOString().split('T')[0];
+const fDate  = s  => new Date(s+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+const fMoney = n  => n != null ? '₹'+Number(n).toLocaleString('en-IN') : '₹0';
+const genId  = () => 'RBR'+Date.now().toString(36).toUpperCase();
+const rObj   = id => ROOMS.find(r=>r.id===id);
+
+function dRange(s,e){
+  const r=[]; let c=new Date(s); const l=new Date(e);
+  while(c<l){r.push(c.toISOString().split('T')[0]);c.setDate(c.getDate()+1);}
+  return r;
+}
+function nNights(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function isBkd(rid,date,exc=null){
+  return bks.some(b=>{
+    if(b.id===exc||b.status==='cancelled') return false;
+    if(b.roomId!==rid) return false;
+    return dRange(b.checkin,b.checkout).includes(date);
+  });
+}
+function hasConflict(rid,ci,co,exc=null){
+  return dRange(ci,co).some(d=>isBkd(rid,d,exc));
+}
+
+/* ─── AUTH ───────────────────────────────────────────────────── */
+function doLogin(){
+  const u=document.getElementById('l_u').value.trim();
+  const p=document.getElementById('l_p').value;
+  if(CREDS[u]&&CREDS[u]===p){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('sb_user').textContent=u.charAt(0).toUpperCase()+u.slice(1);
+    setDateLabel();
+    renderDash();
+  } else {
+    const e=document.getElementById('l_err');
+    e.style.display='block';
+    setTimeout(()=>e.style.display='none',3000);
+  }
+}
+function doLogout(){
+  document.getElementById('loginScreen').style.display='grid';
+  document.getElementById('app').style.display='none';
+}
+['l_u','l_p'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+
+function setDateLabel(){
+  document.getElementById('tb_date').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+}
+
+/* ─── SIDEBAR TOGGLE (MOBILE) ────────────────────────────────── */
+function toggleSidebar(){
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+  btn.classList.toggle('open');
+}
+
+/* ─── NAV ────────────────────────────────────────────────────── */
+const PAGE_NAMES = {dash:'Dashboard',book:'New Booking',cal:'Calendar',list:'All Bookings'};
+function goPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pg_'+id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('tb_page').textContent = PAGE_NAMES[id]||'';
+  if(id==='dash') renderDash();
+  if(id==='book') initForm();
+  if(id==='cal')  renderCal();
+  if(id==='list') renderTable();
+  // Close mobile sidebar
+  const sidebar = document.getElementById('sidebar');
+  if(sidebar.classList.contains('open')) toggleSidebar();
+}
+
+/* ─── WIZARD ─────────────────────────────────────────────────── */
+function goToStep(step){
+  if(step<1||step>TOTAL_STEPS) return;
+  currentStep = step;
+  // Update wizard steps
+  document.querySelectorAll('.wizard-step').forEach(ws=>ws.classList.remove('active'));
+  document.getElementById('ws_'+step).classList.add('active');
+  // Update stepper
+  document.querySelectorAll('.step-item').forEach(si=>{
+    const s = parseInt(si.dataset.step);
+    si.classList.remove('active','done');
+    if(s===step) si.classList.add('active');
+    else if(s<step) si.classList.add('done');
+  });
+  document.querySelectorAll('.step-line').forEach(sl=>{
+    const l = parseInt(sl.dataset.line);
+    sl.classList.toggle('done', l<step);
+  });
+  // Build review on step 5
+  if(step===5) buildReview();
+}
+
+function nextStep(){
+  // Validate current step
+  if(!validateStep(currentStep)) return;
+  goToStep(currentStep+1);
+}
+function prevStep(){
+  goToStep(currentStep-1);
+}
+
+function validateStep(step){
+  switch(step){
+    case 1:
+      if(!selR) { toast('Please select a room.','err'); return false; }
+      return true;
+    case 2:
+      if(!document.getElementById('f_name').value.trim()) { toast('Guest name is required.','err'); return false; }
+      if(!document.getElementById('f_phone').value.trim()) { toast('Phone number is required.','err'); return false; }
+      return true;
+    case 3:
+      const ci=document.getElementById('f_ci').value;
+      const co=document.getElementById('f_co').value;
+      if(!ci) { toast('Check-in date is required.','err'); return false; }
+      if(!co) { toast('Check-out date is required.','err'); return false; }
+      if(co<=ci) { toast('Check-out must be after check-in.','err'); return false; }
+      if(hasConflict(selR.id,ci,co)) { toast('Room conflict — choose different dates.','err'); return false; }
+      return true;
+    case 4:
+      return true;
+    default:
+      return true;
+  }
+}
+
+function buildReview(){
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  const n = (ci&&co&&co>ci) ? nNights(ci,co) : 0;
+  const total = selR ? selR.rate * n : 0;
+  const paid = parseFloat(document.getElementById('f_paid').value)||0;
+  const bal = Math.max(0, total - paid);
+
+  document.getElementById('review_content').innerHTML = `
+    <div class="review-section">
+      <div class="review-title">🛏️ Room</div>
+      <div class="review-grid">
+        <div class="review-item"><span class="review-label">Room</span><span class="review-value">${selR?selR.icon+' '+selR.name:'—'}</span></div>
+        <div class="review-item"><span class="review-label">Rate</span><span class="review-value">${selR?fMoney(selR.rate)+' / night':'—'}</span></div>
+      </div>
+    </div>
+    <div class="review-section">
+      <div class="review-title">👤 Guest</div>
+      <div class="review-grid">
+        <div class="review-item"><span class="review-label">Name</span><span class="review-value">${document.getElementById('f_name').value||'—'}</span></div>
+        <div class="review-item"><span class="review-label">Phone</span><span class="review-value">${document.getElementById('f_phone').value||'—'}</span></div>
+        <div class="review-item"><span class="review-label">Email</span><span class="review-value">${document.getElementById('f_email').value||'—'}</span></div>
+        <div class="review-item"><span class="review-label">Address</span><span class="review-value">${document.getElementById('f_addr').value||'—'}</span></div>
+        ${document.getElementById('f_idt').value?`<div class="review-item"><span class="review-label">ID Type</span><span class="review-value">${document.getElementById('f_idt').value}</span></div>`:''}
+        ${document.getElementById('f_idn').value?`<div class="review-item"><span class="review-label">ID Number</span><span class="review-value">${document.getElementById('f_idn').value}</span></div>`:''}
+      </div>
+    </div>
+    <div class="review-section">
+      <div class="review-title">📅 Stay</div>
+      <div class="review-grid">
+        <div class="review-item"><span class="review-label">Check-in</span><span class="review-value">${ci?fDate(ci):'—'}</span></div>
+        <div class="review-item"><span class="review-label">Check-out</span><span class="review-value">${co?fDate(co):'—'}</span></div>
+        <div class="review-item"><span class="review-label">Duration</span><span class="review-value">${n} Night${n>1?'s':''}</span></div>
+        <div class="review-item"><span class="review-label">Guests</span><span class="review-value">${document.getElementById('f_guests').value||'1'}</span></div>
+      </div>
+    </div>
+    <div class="review-section">
+      <div class="review-title">💳 Payment</div>
+      <div class="review-grid">
+        <div class="review-item"><span class="review-label">Total</span><span class="review-value" style="color:var(--accent);font-size:14px">${fMoney(total)}</span></div>
+        <div class="review-item"><span class="review-label">Paid</span><span class="review-value" style="color:#15803D">${fMoney(paid)}</span></div>
+        <div class="review-item"><span class="review-label">Balance</span><span class="review-value" style="color:${bal>0?'#B91C1C':'#15803D'}">${bal>0?fMoney(bal):'Nil'}</span></div>
+        <div class="review-item"><span class="review-label">Type</span><span class="review-value">${payT.charAt(0).toUpperCase()+payT.slice(1)}</span></div>
+        <div class="review-item"><span class="review-label">Method</span><span class="review-value">${document.getElementById('f_pm').value||'—'}</span></div>
+        <div class="review-item"><span class="review-label">Status</span><span class="review-value" style="text-transform:capitalize">${document.getElementById('f_stat').value}</span></div>
+      </div>
+    </div>
+    ${document.getElementById('f_notes').value?`<div class="review-section"><div class="review-title">📝 Notes</div><p style="font-size:13px;color:var(--muted);padding:8px 0">${document.getElementById('f_notes').value}</p></div>`:''}
+  `;
+}
+
+/* ─── FORM ───────────────────────────────────────────────────── */
+function initForm(){
+  selR=null; payT='advance'; currentStep=1;
+  const t=today();
+  ['f_name','f_phone','f_email','f_addr','f_idn','f_ci','f_co',
+   'f_guests','f_rate','f_total','f_paid','f_bal','f_txn','f_notes'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('f_idt').value='';
+  document.getElementById('f_pm').value='';
+  document.getElementById('f_stat').value='confirmed';
+  document.getElementById('f_ci').min=t;
+  document.getElementById('f_co').min=t;
+  document.getElementById('f_hint').textContent='';
+  document.getElementById('conflict_warn').style.display='none';
+  ['pt_adv','pt_full','pt_pend'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('pt_adv').classList.add('on');
+  goToStep(1);
+  renderRoomGrid('','');
+}
+
+function renderRoomGrid(ci,co){
+  const td=today();
+  document.getElementById('room_grid').innerHTML = ROOMS.map(r=>{
+    const blocked = (ci&&co&&ci<co) ? hasConflict(r.id,ci,co) : isBkd(r.id,td);
+    const picked  = selR?.id===r.id;
+    return `<div class="room-sel-card${picked?' picked':''}${blocked?' blocked':''}" onclick="pickRoom('${r.id}')">
+      <div class="rsc-icon">${r.icon}</div>
+      <div class="rsc-name">${r.name}</div>
+      <div class="rsc-rate">${fMoney(r.rate)}<span style="font-size:12px;color:var(--muted);font-family:var(--sans);font-weight:400"> /night</span></div>
+      <div class="rsc-avail ${blocked?'no':'yes'}">${blocked?'● Unavailable':'● Available'}</div>
+    </div>`;
+  }).join('');
+}
+
+function pickRoom(id){
+  selR=ROOMS.find(r=>r.id===id);
+  document.getElementById('f_rate').value=fMoney(selR.rate);
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  renderRoomGrid(ci,co);
+  calcTotal(); chkConflict();
+}
+function onDateChange(){
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  renderRoomGrid(ci,co); calcTotal(); chkConflict();
+}
+function calcTotal(){
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  if(!selR||!ci||!co||co<=ci){document.getElementById('f_total').value='';return;}
+  const n=nNights(ci,co);
+  document.getElementById('f_total').value=fMoney(selR.rate*n);
+  calcBal();
+}
+function calcBal(){
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  if(!selR||!ci||!co||co<=ci) return;
+  const n=nNights(ci,co), tot=selR.rate*n;
+  const paid=parseFloat(document.getElementById('f_paid').value)||0;
+  const bal=Math.max(0,tot-paid);
+  document.getElementById('f_bal').value = bal>0 ? fMoney(bal) : 'Nil';
+  document.getElementById('f_hint').textContent = `Total for ${n} night${n>1?'s':''}: ${fMoney(tot)}`;
+}
+function chkConflict(){
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  const box=document.getElementById('conflict_warn');
+  if(!ci||!co||!selR){box.style.display='none';return;}
+  if(co<=ci){box.style.display='block';box.textContent='⚠ Check-out must be after check-in.';return;}
+  box.style.display=hasConflict(selR.id,ci,co)?'block':'none';
+}
+function setPT(t){
+  payT=t;
+  ['pt_adv','pt_full','pt_pend'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  const map={advance:'pt_adv',full:'pt_full',pending:'pt_pend'};
+  document.getElementById(map[t]).classList.add('on');
+  if(t==='full'){
+    const ci=document.getElementById('f_ci').value;
+    const co=document.getElementById('f_co').value;
+    if(selR&&ci&&co&&co>ci) document.getElementById('f_paid').value=selR.rate*nNights(ci,co);
+    calcBal();
+  }
+  if(t==='pending'){document.getElementById('f_paid').value=0;calcBal();}
+}
+
+function submitBooking(){
+  const name=document.getElementById('f_name').value.trim();
+  const phone=document.getElementById('f_phone').value.trim();
+  const ci=document.getElementById('f_ci').value;
+  const co=document.getElementById('f_co').value;
+  if(!selR)  return toast('Please select a room.','err');
+  if(!name)  return toast('Guest name is required.','err');
+  if(!phone) return toast('Phone number is required.','err');
+  if(!ci)    return toast('Check-in date is required.','err');
+  if(!co)    return toast('Check-out date is required.','err');
+  if(co<=ci) return toast('Check-out must be after check-in.','err');
+  if(hasConflict(selR.id,ci,co)) return toast('Room conflict — choose different dates.','err');
+  const n=nNights(ci,co), total=selR.rate*n;
+  const paid=parseFloat(document.getElementById('f_paid').value)||0;
+  const bk={
+    id:genId(), roomId:selR.id, roomName:selR.name,
+    roomCk:selR.ck, roomTag:selR.tag, roomColor:selR.color,
+    guestName:name, phone,
+    email:document.getElementById('f_email').value.trim(),
+    address:document.getElementById('f_addr').value.trim(),
+    idType:document.getElementById('f_idt').value,
+    idNum:document.getElementById('f_idn').value.trim(),
+    checkin:ci, checkout:co,
+    guests:parseInt(document.getElementById('f_guests').value)||1,
+    rate:selR.rate, totalAmount:total, paidAmount:paid,
+    balance:Math.max(0,total-paid), payType:payT,
+    payMethod:document.getElementById('f_pm').value,
+    txnId:document.getElementById('f_txn').value.trim(),
+    notes:document.getElementById('f_notes').value.trim(),
+    status:document.getElementById('f_stat').value,
+    createdAt:new Date().toISOString()
+  };
+  bks.unshift(bk); save();
+  toast(`Booking confirmed for ${name}`, 'ok');
+  setTimeout(()=>openTicket(bk.id),700);
+  initForm();
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────────── */
+function renderDash(){
+  const td=today();
+  document.getElementById('d_today').textContent=fDate(td);
+
+  // Animate stats
+  const totalVal = bks.length;
+  const occVal = ROOMS.filter(r=>isBkd(r.id,td)).length;
+  const inVal = bks.filter(b=>b.status==='checkedin').length;
+  const rev = bks.filter(b=>b.status!=='cancelled').reduce((s,b)=>s+(b.paidAmount||0),0);
+
+  animateCount('s_total', totalVal);
+  animateCount('s_occ', occVal);
+  animateCount('s_in', inVal);
+  document.getElementById('s_rev').textContent='₹'+rev.toLocaleString('en-IN');
+
+  document.getElementById('d_rooms').innerHTML = ROOMS.map(r=>{
+    const bk=bks.find(b=>b.status!=='cancelled'&&b.roomId===r.id&&dRange(b.checkin,b.checkout).includes(td));
+    let dotCls='dot-avail', lblCls='sl-avail', txt='Available';
+    if(bk&&bk.status==='checkedin'){dotCls='dot-in';lblCls='sl-in';txt='Checked In — '+bk.guestName;}
+    else if(bk){dotCls='dot-booked';lblCls='sl-booked';txt='Booked — '+bk.guestName;}
+    return `<div class="room-row">
+      <div>
+        <div class="room-name">${r.icon} ${r.name}</div>
+        <div class="room-rate">${fMoney(r.rate)} / night</div>
+      </div>
+      <div style="text-align:right">
+        <span class="status-dot ${dotCls}"></span>
+        <span class="status-label ${lblCls}">${txt}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const rec=bks.slice(0,5);
+  document.getElementById('d_recent').innerHTML = rec.length
+    ? rec.map((b,i)=>`<div class="recent-row" style="animation-delay:${i*0.05}s">
+        <div class="recent-avatar">${b.guestName.charAt(0).toUpperCase()}</div>
+        <div class="recent-info">
+          <div class="recent-name">${b.guestName}</div>
+          <div class="recent-sub">${b.roomName} · ${fDate(b.checkin)}</div>
+        </div>
+        <div class="recent-amount">${fMoney(b.paidAmount)}</div>
+      </div>`).join('')
+    : '<div style="padding:24px;color:var(--muted);font-size:13px;text-align:center">No bookings yet</div>';
+}
+
+function animateCount(id, target){
+  const el = document.getElementById(id);
+  if(target === 0){ el.textContent = '0'; return; }
+  let current = 0;
+  const step = Math.ceil(target / 20);
+  const interval = setInterval(()=>{
+    current += step;
+    if(current >= target){ current = target; clearInterval(interval); }
+    el.textContent = current;
+  }, 30);
+}
+
+/* ─── CALENDAR ───────────────────────────────────────────────── */
+function renderCal(){
+  const y=calM.getFullYear(), m=calM.getMonth();
+  document.getElementById('cal_lbl').textContent =
+    calM.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate(), td=today();
+  let cells=[];
+  const prev=new Date(y,m,0).getDate();
+  for(let i=first-1;i>=0;i--) cells.push({d:prev-i,cur:false});
+  for(let d=1;d<=dim;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    cells.push({d,ds,cur:true});
+  }
+  for(let i=1;i<=42-cells.length;i++) cells.push({d:i,cur:false});
+  document.getElementById('cal_body').innerHTML = cells.map(c=>{
+    if(!c.cur) return `<div class="cal-cell other"><div class="cal-num">${c.d}</div></div>`;
+    const db=bks.filter(b=>b.status!=='cancelled'&&dRange(b.checkin,b.checkout).includes(c.ds));
+    const isTd=c.ds===td;
+    const chips=db.slice(0,4).map(b=>
+      `<span class="cal-chip ${b.roomCk}">${b.roomName.split(' ').map(w=>w[0]).join('')} ${b.guestName.split(' ')[0]}</span>`
+    ).join('');
+    const more=db.length>4?`<span style="font-size:9px;color:var(--muted)">+${db.length-4} more</span>`:'';
+    return `<div class="cal-cell${isTd?' today':''}">
+      <div class="cal-num">${c.d}</div>
+      ${chips}${more}
+    </div>`;
+  }).join('');
+}
+function changeMonth(d){ calM.setMonth(calM.getMonth()+d); renderCal(); }
+
+/* ─── TABLE ──────────────────────────────────────────────────── */
+const SCYC={confirmed:'checkedin',checkedin:'checkedout',checkedout:'confirmed'};
+function setFilter(s,btn){
+  filt=s;
+  document.querySelectorAll('.flt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); renderTable();
+}
+function renderTable(){
+  const q=(document.getElementById('tbl_q')?.value||'').toLowerCase();
+  let rows=filt==='all'?bks:bks.filter(b=>b.status===filt);
+  if(q) rows=rows.filter(b=>b.guestName.toLowerCase().includes(q)||b.roomName.toLowerCase().includes(q)||(b.phone||'').includes(q));
+  const tbody=document.getElementById('tbl_body');
+  const empty=document.getElementById('tbl_empty');
+  const mobileCards=document.getElementById('mobile_cards');
+
+  if(!rows.length){tbody.innerHTML='';mobileCards.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+
+  const pC={full:'pill-full',advance:'pill-advance',pending:'pill-pending'};
+  const pL={full:'Full Paid',advance:'Advance',pending:'Pending'};
+  const sC={confirmed:'pill-conf',checkedin:'pill-in',checkedout:'pill-out',cancelled:'pill-canc'};
+  const sL={confirmed:'Confirmed',checkedin:'Checked In',checkedout:'Checked Out',cancelled:'Cancelled'};
+
+  // Desktop table
+  tbody.innerHTML=rows.map(b=>{
+    const n=nNights(b.checkin,b.checkout);
+    return `<tr>
+      <td><div class="td-name">${b.guestName}</div><div class="td-sub">${b.phone}</div>${b.email?`<div class="td-sub">${b.email}</div>`:''}</td>
+      <td><span class="room-tag ${b.roomTag}">${b.roomName}</span></td>
+      <td>${fDate(b.checkin)}</td>
+      <td>${fDate(b.checkout)}</td>
+      <td><span class="nights-tag">${n}N</span></td>
+      <td>${fMoney(b.totalAmount)}</td>
+      <td style="color:#15803D;font-weight:600">${fMoney(b.paidAmount)}</td>
+      <td style="color:${b.balance>0?'#B91C1C':'#15803D'};font-weight:600">${b.balance>0?fMoney(b.balance):'—'}</td>
+      <td><span class="pill ${pC[b.payType]||'pill-pending'}">${pL[b.payType]||'Pending'}</span><br><span style="font-size:10px;color:var(--muted)">${b.payMethod||''}</span></td>
+      <td><span class="pill ${sC[b.status]}">${sL[b.status]}</span></td>
+      <td><div class="act">
+        ${b.status!=='cancelled'?`<button class="ab ab-next" onclick="cycleStatus('${b.id}')">→</button>`:''}
+        <button class="ab ab-tk" onclick="openTicket('${b.id}')">Ticket</button>
+        <button class="ab ab-bill" onclick="openBill('${b.id}')">Bill</button>
+        <button class="ab ab-pay" onclick="openPayM('${b.id}')">Pay</button>
+        <button class="ab ab-del" onclick="openConf('${b.id}')">Del</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  // Mobile cards
+  mobileCards.innerHTML=rows.map((b,i)=>{
+    const n=nNights(b.checkin,b.checkout);
+    return `<div class="booking-card" style="animation-delay:${i*0.05}s">
+      <div class="bc-header">
+        <div class="bc-guest">
+          <div class="bc-avatar">${b.guestName.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="bc-name">${b.guestName}</div>
+            <div class="bc-phone">${b.phone}</div>
+          </div>
+        </div>
+        <span class="pill ${sC[b.status]}">${sL[b.status]}</span>
+      </div>
+      <div class="bc-details">
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Room</div>
+          <div class="bc-detail-value"><span class="room-tag ${b.roomTag}" style="font-size:9px;padding:2px 6px">${b.roomName}</span></div>
+        </div>
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Duration</div>
+          <div class="bc-detail-value">${n} Night${n>1?'s':''}</div>
+        </div>
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Check-in</div>
+          <div class="bc-detail-value">${fDate(b.checkin)}</div>
+        </div>
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Check-out</div>
+          <div class="bc-detail-value">${fDate(b.checkout)}</div>
+        </div>
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Total</div>
+          <div class="bc-detail-value">${fMoney(b.totalAmount)}</div>
+        </div>
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Paid</div>
+          <div class="bc-detail-value" style="color:#15803D">${fMoney(b.paidAmount)}</div>
+        </div>
+        ${b.balance>0?`<div class="bc-detail-item">
+          <div class="bc-detail-label">Balance</div>
+          <div class="bc-detail-value" style="color:#B91C1C">${fMoney(b.balance)}</div>
+        </div>`:''}
+        <div class="bc-detail-item">
+          <div class="bc-detail-label">Payment</div>
+          <div class="bc-detail-value"><span class="pill ${pC[b.payType]||'pill-pending'}">${pL[b.payType]||'Pending'}</span></div>
+        </div>
+      </div>
+      <div class="bc-footer">
+        <div class="bc-actions">
+          ${b.status!=='cancelled'?`<button class="ab ab-next" onclick="cycleStatus('${b.id}')">→</button>`:''}
+          <button class="ab ab-tk" onclick="openTicket('${b.id}')">Ticket</button>
+          <button class="ab ab-bill" onclick="openBill('${b.id}')">Bill</button>
+          <button class="ab ab-pay" onclick="openPayM('${b.id}')">Pay</button>
+          <button class="ab ab-del" onclick="openConf('${b.id}')">Del</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cycleStatus(id){
+  const b=bks.find(x=>x.id===id); if(!b) return;
+  b.status=SCYC[b.status]||'confirmed';
+  save(); renderTable(); renderDash();
+  toast('Status → '+b.status,'ok');
+}
+
+/* ─── TICKET ──────────────────────────────────────────────────── */
+function openTicket(id){
+  const b=bks.find(x=>x.id===id); if(!b) return;
+  activeBk=b;
+  const n=nNights(b.checkin,b.checkout);
+  const r=rObj(b.roomId);
+  document.getElementById('tk_content').innerHTML=`
+    <div class="tk-top">
+      <div class="tk-bkid">${b.id}</div>
+      <div class="tk-logo-row">
+        <div class="tk-mark">R</div>
+        <div>
+          <div class="tk-resort">Rajav Beach Resort</div>
+          <span class="tk-loc-tag">Cherai Beach · Kochi, Kerala</span>
+        </div>
+      </div>
+    </div>
+    <div class="tk-body">
+      <div class="tk-label">Booking Confirmation</div>
+      <div class="tk-guest">${b.guestName}</div>
+      <div class="tk-meta-grid">
+        <div class="tk-meta-item"><div class="tk-meta-l">Room</div><div class="tk-meta-v">${r?.icon||''} ${b.roomName}</div></div>
+        <div class="tk-meta-item"><div class="tk-meta-l">Guests</div><div class="tk-meta-v">${b.guests} Person${b.guests>1?'s':''}</div></div>
+        <div class="tk-meta-item"><div class="tk-meta-l">Check-in</div><div class="tk-meta-v">${fDate(b.checkin)}</div></div>
+        <div class="tk-meta-item"><div class="tk-meta-l">Check-out</div><div class="tk-meta-v">${fDate(b.checkout)}</div></div>
+        <div class="tk-meta-item"><div class="tk-meta-l">Duration</div><div class="tk-meta-v">${n} Night${n>1?'s':''}</div></div>
+        <div class="tk-meta-item"><div class="tk-meta-l">Status</div><div class="tk-meta-v" style="text-transform:capitalize;color:var(--accent)">${b.status}</div></div>
+      </div>
+      <hr class="tk-divider">
+      <table class="tk-pay-table">
+        <tr><td style="color:var(--muted)">Room Rate</td><td>${fMoney(b.rate)} / night</td></tr>
+        <tr><td style="color:var(--muted)">Duration</td><td>${n} night${n>1?'s':''}</td></tr>
+        <tr class="tk-pay-total"><td>Total Amount</td><td>${fMoney(b.totalAmount)}</td></tr>
+        <tr><td style="color:var(--muted)">Amount Paid</td><td style="color:#15803D">${fMoney(b.paidAmount)}</td></tr>
+        ${b.balance>0?`<tr><td style="color:var(--muted)">Balance Due</td><td style="color:#B91C1C">${fMoney(b.balance)}</td></tr>`:''}
+        <tr><td style="color:var(--muted)">Payment Method</td><td>${b.payMethod||'—'}</td></tr>
+      </table>
+      ${b.notes?`<div style="background:var(--bg);padding:10px 12px;font-size:12px;color:var(--muted);margin-bottom:12px;border-left:3px solid var(--accent);border-radius:4px"><strong style="color:var(--text)">Notes:</strong> ${b.notes}</div>`:''}
+      <div class="tk-footer">
+        Check-in: 2:00 PM &nbsp;&nbsp;|&nbsp;&nbsp; Check-out: 11:00 AM<br>
+        Complimentary Breakfast &nbsp;&nbsp;|&nbsp;&nbsp; Beachfront Pool Access<br>
+        <strong style="color:var(--text)">rajavbeachresort.com</strong>
+      </div>
+      <div class="tk-barcode">||| ${b.id} |||</div>
+    </div>`;
+  document.getElementById('m_ticket').classList.add('open');
+}
+
+/* ─── BILL ────────────────────────────────────────────────────── */
+function openBill(id){
+  const b=bks.find(x=>x.id===id); if(!b) return;
+  activeBk=b;
+  const n=nNights(b.checkin,b.checkout);
+  document.getElementById('bill_sub').textContent=`${b.id} · ${fDate(b.checkin)} → ${fDate(b.checkout)}`;
+  const rows=[
+    ['Guest',b.guestName],['Phone',b.phone],['Room',b.roomName],
+    ['Check-in',fDate(b.checkin)],['Check-out',fDate(b.checkout)],
+    ['Duration',n+' night'+(n>1?'s':'')],
+    ['Rate / Night',fMoney(b.rate)],
+    ['Amount Paid',fMoney(b.paidAmount)],
+    ...(b.balance>0?[['Balance Due',fMoney(b.balance)]]:[ ['Balance','Fully Settled']]),
+    ['Payment Method',b.payMethod||'—'],
+    ...(b.txnId?[['Transaction ID',b.txnId]]:[]),
+  ];
+  document.getElementById('bill_rows').innerHTML=
+    `<div class="bill-rows">${rows.map(r=>`<div class="bill-row"><span class="bill-row-lbl">${r[0]}</span><span class="bill-row-val" style="${r[0]==='Balance Due'?'color:#B91C1C':r[0]==='Balance'&&r[1]==='Fully Settled'?'color:#15803D':''}">${r[1]}</span></div>`).join('')}</div>
+     <div class="bill-total-row"><span>Total Amount</span><span>${fMoney(b.totalAmount)}</span></div>`;
+  document.getElementById('m_bill').classList.add('open');
+}
+
+/* ─── PDF ─────────────────────────────────────────────────────── */
+function buildPDF(type){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a5'});
+  const b=activeBk, n=nNights(b.checkin,b.checkout), W=doc.internal.pageSize.getWidth();
+
+  // Header
+  doc.setFillColor(17,24,22); doc.rect(0,0,W,36,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('RAJAV BEACH RESORT',W/2,13,{align:'center'});
+  doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.setTextColor(100,200,180);
+  doc.text('CHERAI BEACH  ·  KOCHI, KERALA  ·  rajavbeachresort.com',W/2,19,{align:'center'});
+  doc.setFillColor(13,124,102); doc.rect(0,26,W,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+  doc.text(type==='ticket'?'BOOKING CONFIRMATION':'PAYMENT RECEIPT',W/2,32.5,{align:'center'});
+  doc.setFontSize(7); doc.text(b.id,W-6,32.5,{align:'right'});
+
+  let y=44; doc.setTextColor(26,26,26);
+
+  if(type==='ticket'){
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(b.guestName,W/2,y,{align:'center'}); y+=8;
+    const meta=[
+      ['ROOM',b.roomName],['GUESTS',b.guests+(b.guests>1?' Persons':' Person')],
+      ['CHECK-IN',fDate(b.checkin)],['CHECK-OUT',fDate(b.checkout)],
+      ['DURATION',n+' Night'+(n>1?'s':'')],['STATUS',b.status.toUpperCase()]
+    ];
+    doc.setFontSize(7.5);
+    meta.forEach((row,i)=>{
+      const col=i%2, rx=col===0?8:W/2+4, ry=y+Math.floor(i/2)*11;
+      doc.setFont('helvetica','bold'); doc.setTextColor(107,114,128);
+      doc.text(row[0],rx,ry);
+      doc.setFont('helvetica','normal'); doc.setTextColor(26,26,26);
+      doc.text(String(row[1]),rx,ry+5);
+    });
+    y+=Math.ceil(meta.length/2)*11+4;
+    doc.setDrawColor(229,229,227); doc.setLineDashPattern([2,2],0);
+    doc.line(8,y,W-8,y); doc.setLineDashPattern([],0); y+=8;
+  }
+
+  // Pay box
+  doc.setFillColor(250,250,248);
+  const payRows=type==='ticket'?[
+    ['Room Rate',fMoney(b.rate)+' / night'],
+    ['Duration',n+' night'+(n>1?'s':'')],
+    ['Total Amount',fMoney(b.totalAmount)],
+    ['Amount Paid',fMoney(b.paidAmount)],
+    ...(b.balance>0?[['Balance Due',fMoney(b.balance)]]:[ ['Balance','Fully Settled']]),
+    ['Payment Method',b.payMethod||'—'],
+  ]:[
+    ['Guest Name',b.guestName],['Phone',b.phone],['Room',b.roomName],
+    ['Check-in',fDate(b.checkin)],['Check-out',fDate(b.checkout)],
+    ['Duration',n+' night'+(n>1?'s':'')],['Rate / Night',fMoney(b.rate)],
+    ['Total Amount',fMoney(b.totalAmount)],
+    ['Amount Paid',fMoney(b.paidAmount)],
+    ...(b.balance>0?[['Balance Due',fMoney(b.balance)]]:[ ['Balance','Fully Settled']]),
+    ['Payment Method',b.payMethod||'—'],
+    ...(b.txnId?[['Transaction ID',b.txnId]]:[]),
+  ];
+  const bh=payRows.length*7+10;
+  doc.rect(6,y,W-12,bh,'F');
+  y+=7;
+  payRows.forEach(row=>{
+    const isTot=['Total Amount','Amount Paid'].includes(row[0]);
+    const isBal=row[0]==='Balance Due';
+    const isGood=row[0]==='Balance'&&row[1]==='Fully Settled';
+    doc.setFontSize(8); doc.setFont('helvetica',isTot?'bold':'normal');
+    doc.setTextColor(107,114,128); doc.text(row[0],12,y);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(isBal?176:isGood?21:isTot?13:26, isBal?28:isGood?128:isTot?124:26, isBal?28:isGood?102:isTot?102:26);
+    doc.text(String(row[1]),W-12,y,{align:'right'});
+    y+=7;
+  });
+  y+=6;
+  doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(107,114,128);
+  if(type==='ticket'){
+    if(b.notes){doc.text('Notes: '+b.notes,W/2,y,{align:'center',maxWidth:W-16});y+=6;}
+    doc.text('Check-in: 2:00 PM  |  Check-out: 11:00 AM',W/2,y,{align:'center'});y+=5;
+    doc.text('Complimentary Breakfast Included  |  Beachfront Pool Access',W/2,y,{align:'center'});y+=5;
+    doc.setFont('courier','normal'); doc.setTextColor(200,200,200);
+    doc.text('||| '+b.id+' |||',W/2,y+4,{align:'center'});
+  } else {
+    doc.text('Thank you for choosing Rajav Beach Resort',W/2,y,{align:'center'});y+=5;
+    doc.text('rajavbeachresort.com',W/2,y,{align:'center'});
+  }
+  return doc;
+}
+function makePDF(type){
+  if(!activeBk) return;
+  buildPDF(type).save(type==='ticket'?`Rajav_Ticket_${activeBk.id}.pdf`:`Rajav_Bill_${activeBk.id}.pdf`);
+  toast('PDF downloaded','ok');
+}
+
+/* ─── WHATSAPP WITH PDF (Web Share API) ───────────────────────── */
+async function sendWA(type){
+  if(!activeBk) return;
+  const b=activeBk, n=nNights(b.checkin,b.checkout);
+  const fname=type==='ticket'?`Rajav_Ticket_${b.id}.pdf`:`Rajav_Bill_${b.id}.pdf`;
+
+  // Build the PDF
+  const doc = buildPDF(type);
+
+  // Build WhatsApp text message
+  let msg='';
+  if(type==='ticket'){
+    msg=`🏖️ *RAJAV BEACH RESORT*\n_Cherai Beach, Kochi, Kerala_\n\n✅ *Booking Confirmed!*\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🛏️ *Room:* ${b.roomName}\n📅 *Check-in:* ${fDate(b.checkin)}\n📅 *Check-out:* ${fDate(b.checkout)}\n🌙 *Duration:* ${n} Night${n>1?'s':''}\n👥 *Guests:* ${b.guests}\n━━━━━━━━━━━━━━━━━━━━\n💰 *Rate:* ${fMoney(b.rate)}/night\n💰 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 *Method:* ${b.payMethod||'—'}\n━━━━━━━━━━━━━━━━━━━━\n🔖 *Booking ID:* ${b.id}\n⏰ Check-in: 2:00 PM  |  Check-out: 11:00 AM\n🍳 Complimentary breakfast\n🏊 Beachfront pool access\n\n_Thank you for choosing Rajav Beach Resort!_ 🙏\nrajavbeachresort.com`;
+  } else {
+    msg=`🏖️ *RAJAV BEACH RESORT*\n_Payment Receipt_\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🔖 *Booking ID:* ${b.id}\n━━━━━━━━━━━━━━━━━━━━\n🛏️ ${b.roomName}\n📅 ${fDate(b.checkin)} → ${fDate(b.checkout)}\n🌙 ${n} Night${n>1?'s':''} × ${fMoney(b.rate)}\n━━━━━━━━━━━━━━━━━━━━\n📊 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 ${b.payMethod||'—'}${b.txnId?'\n🔢 Ref: '+b.txnId:''}\n━━━━━━━━━━━━━━━━━━━━\n_Thank you!_ 🙏  rajavbeachresort.com`;
+  }
+
+  // Try Web Share API with file
+  try {
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], fname, { type: 'application/pdf' });
+
+    if(navigator.canShare && navigator.canShare({ files: [pdfFile] })){
+      await navigator.share({
+        text: msg,
+        files: [pdfFile]
+      });
+      toast('Shared via WhatsApp!','ok');
+      return;
+    }
+  } catch(err){
+    // User cancelled or Web Share not supported — fall through to fallback
+    if(err.name === 'AbortError'){
+      toast('Share cancelled','info');
+      return;
+    }
+  }
+
+  // Fallback: Download PDF + open WhatsApp with text
+  doc.save(fname);
+  const raw=b.phone.replace(/\D/g,'');
+  setTimeout(()=>window.open(`https://wa.me/${raw.startsWith('91')?raw:'91'+raw}?text=${encodeURIComponent(msg)}`,'_blank'),700);
+  toast('PDF downloaded — attach it in WhatsApp','info');
+}
+
+/* ─── PAY UPDATE ──────────────────────────────────────────────── */
+function openPayM(id){
+  payId=id;
+  const b=bks.find(x=>x.id===id); if(!b) return;
+  activeBk=b;
+  document.getElementById('pay_content').innerHTML=`
+    <div style="background:var(--bg);border-left:3px solid var(--accent);padding:12px 14px;margin-bottom:16px;font-size:13px;border-radius:4px">
+      <strong>${b.guestName}</strong> — ${b.roomName}<br>
+      <span style="color:var(--muted)">Total ${fMoney(b.totalAmount)} · Paid ${fMoney(b.paidAmount)} · Balance ${b.balance>0?fMoney(b.balance):'Nil'}</span>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Additional Payment (₹)</label>
+      <input id="pa_amt" type="number" min="0" placeholder="Enter amount received">
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Payment Method</label>
+      <select id="pa_m"><option value="">Select</option><option>Cash</option><option>UPI / GPay</option><option>Bank Transfer</option><option>Credit Card</option><option>Debit Card</option></select>
+    </div>
+    <div class="field"><label>Transaction Reference</label>
+      <input id="pa_t" type="text" placeholder="UPI ref, etc.">
+    </div>`;
+  document.getElementById('m_pay').classList.add('open');
+}
+function savePayUpdate(){
+  const b=bks.find(x=>x.id===payId); if(!b) return;
+  const amt=parseFloat(document.getElementById('pa_amt').value)||0;
+  if(!amt) return toast('Enter a valid amount','err');
+  b.paidAmount=(b.paidAmount||0)+amt;
+  b.balance=Math.max(0,b.totalAmount-b.paidAmount);
+  if(b.balance===0) b.payType='full';
+  const m=document.getElementById('pa_m').value; if(m) b.payMethod=m;
+  const t=document.getElementById('pa_t').value; if(t) b.txnId=t;
+  save(); renderTable(); renderDash(); closeM('m_pay');
+  toast('₹'+amt.toLocaleString('en-IN')+' payment recorded','ok');
+}
+
+/* ─── CONFIRM ─────────────────────────────────────────────────── */
+function openConf(id){
+  delId=id;
+  const b=bks.find(x=>x.id===id);
+  document.getElementById('conf_sub').textContent=`${b.guestName} · ${b.roomName} · ${fDate(b.checkin)} → ${fDate(b.checkout)}`;
+  document.getElementById('m_conf').classList.add('open');
+}
+function doMarkCancel(){
+  const b=bks.find(x=>x.id===delId);
+  if(b){b.status='cancelled';save();renderTable();renderDash();}
+  closeM('m_conf'); toast('Booking cancelled','info');
+}
+function doDelete(){
+  bks=bks.filter(x=>x.id!==delId);
+  save(); renderTable(); renderDash(); closeM('m_conf'); toast('Booking deleted','info');
+}
+
+/* ─── MODAL & TOAST ───────────────────────────────────────────── */
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); })
+);
+let _tt;
+function toast(msg,type='ok'){
+  const icons={ok:'✓',err:'✕',info:'ℹ'};
+  document.getElementById('t_msg').textContent=msg;
+  document.getElementById('t_icon').textContent=icons[type]||'ℹ';
+  const el=document.getElementById('toast');
+  el.className='toast '+type; void el.offsetWidth; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
