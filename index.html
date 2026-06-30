@@ -2432,7 +2432,7 @@ function makePDF(type){
 /* ─── WHATSAPP DIRECT SEND WITH PDF ───────────────────────────── */
 function sendWA(type){
   if(!activeBk) return;
-  const b=activeBk, n=nNights(b.checkin,b.checkout);
+  const b=activeBk;
   const fname=type==='ticket'?`Rajav_Ticket_${b.id}.pdf`:`Rajav_Bill_${b.id}.pdf`;
 
   // Validate phone number from booking
@@ -2445,18 +2445,10 @@ function sendWA(type){
   const doc = buildPDF(type);
   doc.save(fname);
 
-  // Step 2: Build WhatsApp message
-  let msg='';
-  if(type==='ticket'){
-    msg=`🏖️ *RAJAV BEACH RESORT*\n_Cherai Beach, Kochi, Kerala_\n\n✅ *Booking Confirmed!*\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🛏️ *Room:* ${b.roomName}\n📅 *Check-in:* ${fDate(b.checkin)}\n📅 *Check-out:* ${fDate(b.checkout)}\n🌙 *Duration:* ${n} Night${n>1?'s':''}\n👥 *Guests:* ${b.guests}\n━━━━━━━━━━━━━━━━━━━━\n💰 *Rate:* ${fMoney(b.rate)}/night\n💰 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 *Method:* ${b.payMethod||'—'}\n━━━━━━━━━━━━━━━━━━━━\n🔖 *Booking ID:* ${b.id}\n⏰ Check-in: 2:00 PM  |  Check-out: 11:00 AM\n🍳 Complimentary breakfast\n🏊 Beachfront pool access\n\n_Thank you for choosing Rajav Beach Resort!_ 🙏\nrajavbeachresort.com`;
-  } else {
-    msg=`🏖️ *RAJAV BEACH RESORT*\n_Payment Receipt_\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🔖 *Booking ID:* ${b.id}\n━━━━━━━━━━━━━━━━━━━━\n🛏️ ${b.roomName}\n📅 ${fDate(b.checkin)} → ${fDate(b.checkout)}\n🌙 ${n} Night${n>1?'s':''} × ${fMoney(b.rate)}\n━━━━━━━━━━━━━━━━━━━━\n📊 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 ${b.payMethod||'—'}${b.txnId?'\n🔢 Ref: '+b.txnId:''}\n━━━━━━━━━━━━━━━━━━━━\n_Thank you!_ 🙏  rajavbeachresort.com`;
-  }
-
-  // Step 3: Open WhatsApp directly to the client's number (from booking)
+  // Step 2: Open WhatsApp directly to the client's number (from booking) without text message
   const raw = b.phone.replace(/\D/g,'');
   const waNumber = raw.startsWith('91') ? raw : '91' + raw;
-  const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+  const waUrl = `https://wa.me/${waNumber}`;
   setTimeout(() => window.open(waUrl, '_blank'), 800);
 
   toast(`📎 PDF saved! Attach it in WhatsApp for ${b.phone}`, 'ok');
