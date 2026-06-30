@@ -1448,7 +1448,7 @@ let selR     = null, payT = 'advance', filt = 'all';
 let calM     = new Date(); calM.setDate(1);
 let activeBk = null, delId = null, payId = null;
 let currentStep  = 1;
-let _loggedIn    = false;
+let _loggedIn    = !!localStorage.getItem('rajav_session_user');
 const TOTAL_STEPS = 5;
 
 // Google Sheets sync helper
@@ -1732,10 +1732,9 @@ function setDateLabel(){
     new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
 }
 
-// Auto-login session restore
+// Auto-login session restore DOM adjustments
 const savedUser = localStorage.getItem('rajav_session_user');
 if (savedUser) {
-  _loggedIn = true;
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('sb_user').textContent = savedUser.charAt(0).toUpperCase() + savedUser.slice(1);
