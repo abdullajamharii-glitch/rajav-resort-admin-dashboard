@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rajav-admin-v2';
+const CACHE_NAME = 'rajav-admin-v3';
 const ASSETS = [
   './',
   './index.html',

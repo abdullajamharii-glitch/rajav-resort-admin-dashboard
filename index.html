@@ -1585,6 +1585,7 @@ async function doLogin(){
         _db.ref('credentials/' + u).set(hashed);
       }
       
+      localStorage.setItem('rajav_session_user', u);
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('sb_user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
@@ -1718,6 +1719,9 @@ function showLoginErr(){
 }
 function doLogout(){
   _loggedIn = false;
+  localStorage.removeItem('rajav_session_user');
+  document.getElementById('l_u').value = '';
+  document.getElementById('l_p').value = '';
   document.getElementById('loginScreen').style.display = 'grid';
   document.getElementById('app').style.display = 'none';
 }
@@ -1726,6 +1730,16 @@ function doLogout(){
 function setDateLabel(){
   document.getElementById('tb_date').textContent =
     new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+}
+
+// Auto-login session restore
+const savedUser = localStorage.getItem('rajav_session_user');
+if (savedUser) {
+  _loggedIn = true;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('sb_user').textContent = savedUser.charAt(0).toUpperCase() + savedUser.slice(1);
+  setDateLabel();
 }
 
 /* ─── SIDEBAR TOGGLE (MOBILE) ────────────────────────────────── */
