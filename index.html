@@ -2430,7 +2430,7 @@ function makePDF(type){
 }
 
 /* ─── WHATSAPP DIRECT SEND WITH PDF ───────────────────────────── */
-function sendWA(type){
+async function sendWA(type){
   if(!activeBk) return;
   const b=activeBk;
   const fname=type==='ticket'?`Rajav_Ticket_${b.id}.pdf`:`Rajav_Bill_${b.id}.pdf`;
@@ -2441,17 +2441,51 @@ function sendWA(type){
     return;
   }
 
-  // Step 1: Download PDF to admin's device
-  const doc = buildPDF(type);
-  doc.save(fname);
+  toast('Generating and uploading PDF… please wait','info');
 
-  // Step 2: Open WhatsApp directly to the client's number (from booking) without text message
+  // Build the PDF blob
+  const doc = buildPDF(type);
+  const pdfBlob = doc.output('blob');
+
+  let pdfUrl = '';
+  try {
+    // Upload to free tmpfiles.org API
+    const formData = new FormData();
+    formData.append('file', pdfBlob, fname);
+
+    const response = await fetch('https://tmpfiles.org/api/v1/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (response.ok) {
+      const resData = await response.json();
+      if (resData.status === 'success' && resData.data && resData.data.url) {
+        // Convert to direct download link (replace tmpfiles.org/ with tmpfiles.org/dl/)
+        pdfUrl = resData.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+      }
+    }
+  } catch (err) {
+    console.error('PDF upload fallback to local download:', err);
+  }
+
+  // Target phone number
   const raw = b.phone.replace(/\D/g,'');
   const waNumber = raw.startsWith('91') ? raw : '91' + raw;
-  const waUrl = `https://wa.me/${waNumber}`;
-  setTimeout(() => window.open(waUrl, '_blank'), 800);
 
-  toast(`📎 PDF saved! Attach it in WhatsApp for ${b.phone}`, 'ok');
+  if (pdfUrl) {
+    // Send message containing the direct PDF download link
+    const msg = `Hello ${b.guestName}, here is your Rajav Beach Resort PDF ${type === 'ticket' ? 'Ticket' : 'Bill'}: ${pdfUrl}`;
+    const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+    toast(`Sent PDF link via WhatsApp to ${b.phone}`, 'ok');
+  } else {
+    // Fallback: Download locally and open empty WhatsApp chat
+    doc.save(fname);
+    const waUrl = `https://wa.me/${waNumber}`;
+    setTimeout(() => window.open(waUrl, '_blank'), 800);
+    toast(`📎 PDF saved! Attach it in WhatsApp for ${b.phone}`, 'ok');
+  }
 }
 
 /* ─── PAY UPDATE ──────────────────────────────────────────────── */
