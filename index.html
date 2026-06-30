@@ -37,6 +37,7 @@ window.addEventListener('appinstalled', function() {
 <!-- Firebase SDKs (CDN - no build step needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1459,8 +1460,9 @@ const FIREBASE_CONFIG = {
   databaseURL: "https://rajav-resort-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 firebase.initializeApp(FIREBASE_CONFIG);
-const _db  = firebase.database();
-const _ref = _db.ref('bookings');
+const _db      = firebase.database();
+const _storage = firebase.storage();
+const _ref     = _db.ref('bookings');
 
 // Google Sheets Config
 let gSheetUrl = 'https://script.google.com/macros/s/AKfycbx7NBYtlrvO98xaYPoYHsDPAsjSoRGIXjvtpTGx-0P01mnO2c__n3uUv1WPgXfzt96r/exec';
@@ -2429,8 +2431,8 @@ function makePDF(type){
   toast('PDF downloaded','ok');
 }
 
-/* ─── WHATSAPP DIRECT SEND WITH PDF ───────────────────────────── */
-function sendWA(type){
+/* ─── WHATSAPP DIRECT SEND WITH PDF LINK ──────────────────────── */
+async function sendWA(type){
   if(!activeBk) return;
   const b=activeBk, n=nNights(b.checkin,b.checkout);
   const fname=type==='ticket'?`Rajav_Ticket_${b.id}.pdf`:`Rajav_Bill_${b.id}.pdf`;
@@ -2441,26 +2443,41 @@ function sendWA(type){
     return;
   }
 
-  // Build the PDF and download it
-  const doc = buildPDF(type);
-  doc.save(fname);
+  toast('Uploading PDF… please wait','info');
 
-  // Build WhatsApp text message
-  let msg='';
-  if(type==='ticket'){
-    msg=`🏖️ *RAJAV BEACH RESORT*\n_Cherai Beach, Kochi, Kerala_\n\n✅ *Booking Confirmed!*\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🛏️ *Room:* ${b.roomName}\n📅 *Check-in:* ${fDate(b.checkin)}\n📅 *Check-out:* ${fDate(b.checkout)}\n🌙 *Duration:* ${n} Night${n>1?'s':''}\n👥 *Guests:* ${b.guests}\n━━━━━━━━━━━━━━━━━━━━\n💰 *Rate:* ${fMoney(b.rate)}/night\n💰 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 *Method:* ${b.payMethod||'—'}\n━━━━━━━━━━━━━━━━━━━━\n🔖 *Booking ID:* ${b.id}\n⏰ Check-in: 2:00 PM  |  Check-out: 11:00 AM\n🍳 Complimentary breakfast\n🏊 Beachfront pool access\n\n_Thank you for choosing Rajav Beach Resort!_ 🙏\nrajavbeachresort.com`;
-  } else {
-    msg=`🏖️ *RAJAV BEACH RESORT*\n_Payment Receipt_\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🔖 *Booking ID:* ${b.id}\n━━━━━━━━━━━━━━━━━━━━\n🛏️ ${b.roomName}\n📅 ${fDate(b.checkin)} → ${fDate(b.checkout)}\n🌙 ${n} Night${n>1?'s':''} × ${fMoney(b.rate)}\n━━━━━━━━━━━━━━━━━━━━\n📊 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 ${b.payMethod||'—'}${b.txnId?'\n🔢 Ref: '+b.txnId:''}\n━━━━━━━━━━━━━━━━━━━━\n_Thank you!_ 🙏  rajavbeachresort.com`;
+  // Build the PDF blob
+  const doc = buildPDF(type);
+  const pdfBlob = doc.output('blob');
+
+  let pdfUrl = '';
+  try {
+    // Upload to Firebase Storage → get public download URL
+    const storageRef = _storage.ref(`pdfs/${b.id}/${fname}`);
+    const snap = await storageRef.put(pdfBlob, { contentType: 'application/pdf' });
+    pdfUrl = await snap.ref.getDownloadURL();
+  } catch(err){
+    console.error('PDF upload failed:', err);
+    // Fallback: download locally and send text-only
+    doc.save(fname);
+    toast('Upload failed — PDF downloaded locally','err');
+    pdfUrl = '';
   }
 
-  // Build the direct wa.me link with the client's phone from the booking
+  // Build WhatsApp message (with PDF link if upload succeeded)
+  let msg='';
+  const pdfLine = pdfUrl ? `\n📄 *Your PDF:* ${pdfUrl}` : '';
+  if(type==='ticket'){
+    msg=`🏖️ *RAJAV BEACH RESORT*\n_Cherai Beach, Kochi, Kerala_\n\n✅ *Booking Confirmed!*\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🛏️ *Room:* ${b.roomName}\n📅 *Check-in:* ${fDate(b.checkin)}\n📅 *Check-out:* ${fDate(b.checkout)}\n🌙 *Duration:* ${n} Night${n>1?'s':''}\n👥 *Guests:* ${b.guests}\n━━━━━━━━━━━━━━━━━━━━\n💰 *Rate:* ${fMoney(b.rate)}/night\n💰 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 *Method:* ${b.payMethod||'—'}\n━━━━━━━━━━━━━━━━━━━━\n🔖 *Booking ID:* ${b.id}\n⏰ Check-in: 2:00 PM  |  Check-out: 11:00 AM\n🍳 Complimentary breakfast\n🏊 Beachfront pool access${pdfLine}\n\n_Thank you for choosing Rajav Beach Resort!_ 🙏\nrajavbeachresort.com`;
+  } else {
+    msg=`🏖️ *RAJAV BEACH RESORT*\n_Payment Receipt_\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🔖 *Booking ID:* ${b.id}\n━━━━━━━━━━━━━━━━━━━━\n🛏️ ${b.roomName}\n📅 ${fDate(b.checkin)} → ${fDate(b.checkout)}\n🌙 ${n} Night${n>1?'s':''} × ${fMoney(b.rate)}\n━━━━━━━━━━━━━━━━━━━━\n📊 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 ${b.payMethod||'—'}${b.txnId?'\n🔢 Ref: '+b.txnId:''}${pdfLine}\n━━━━━━━━━━━━━━━━━━━━\n_Thank you!_ 🙏  rajavbeachresort.com`;
+  }
+
+  // Open WhatsApp directly to client's number with PDF link in message
   const raw = b.phone.replace(/\D/g,'');
   const waNumber = raw.startsWith('91') ? raw : '91' + raw;
   const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
-
-  // Open WhatsApp directly to the client's number after PDF downloads
-  setTimeout(() => window.open(waUrl, '_blank'), 700);
-  toast(`PDF downloaded — opening WhatsApp for ${b.phone}`, 'ok');
+  window.open(waUrl, '_blank');
+  toast(`WhatsApp opened for ${b.phone} with PDF link`, 'ok');
 }
 
 /* ─── PAY UPDATE ──────────────────────────────────────────────── */
