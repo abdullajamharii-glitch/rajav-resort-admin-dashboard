@@ -2429,14 +2429,21 @@ function makePDF(type){
   toast('PDF downloaded','ok');
 }
 
-/* ─── WHATSAPP WITH PDF (Web Share API) ───────────────────────── */
-async function sendWA(type){
+/* ─── WHATSAPP DIRECT SEND WITH PDF ───────────────────────────── */
+function sendWA(type){
   if(!activeBk) return;
   const b=activeBk, n=nNights(b.checkin,b.checkout);
   const fname=type==='ticket'?`Rajav_Ticket_${b.id}.pdf`:`Rajav_Bill_${b.id}.pdf`;
 
-  // Build the PDF
+  // Validate phone number from booking
+  if(!b.phone || !b.phone.trim()){
+    toast('No phone number found for this booking','err');
+    return;
+  }
+
+  // Build the PDF and download it
   const doc = buildPDF(type);
+  doc.save(fname);
 
   // Build WhatsApp text message
   let msg='';
@@ -2446,32 +2453,14 @@ async function sendWA(type){
     msg=`🏖️ *RAJAV BEACH RESORT*\n_Payment Receipt_\n━━━━━━━━━━━━━━━━━━━━\n👤 *Guest:* ${b.guestName}\n🔖 *Booking ID:* ${b.id}\n━━━━━━━━━━━━━━━━━━━━\n🛏️ ${b.roomName}\n📅 ${fDate(b.checkin)} → ${fDate(b.checkout)}\n🌙 ${n} Night${n>1?'s':''} × ${fMoney(b.rate)}\n━━━━━━━━━━━━━━━━━━━━\n📊 *Total:* ${fMoney(b.totalAmount)}\n✅ *Paid:* ${fMoney(b.paidAmount)}\n${b.balance>0?'⚠️ *Balance Due:* '+fMoney(b.balance):'✅ *Fully Settled*'}\n💳 ${b.payMethod||'—'}${b.txnId?'\n🔢 Ref: '+b.txnId:''}\n━━━━━━━━━━━━━━━━━━━━\n_Thank you!_ 🙏  rajavbeachresort.com`;
   }
 
-  // Try Web Share API with file
-  try {
-    const pdfBlob = doc.output('blob');
-    const pdfFile = new File([pdfBlob], fname, { type: 'application/pdf' });
+  // Build the direct wa.me link with the client's phone from the booking
+  const raw = b.phone.replace(/\D/g,'');
+  const waNumber = raw.startsWith('91') ? raw : '91' + raw;
+  const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
 
-    if(navigator.canShare && navigator.canShare({ files: [pdfFile] })){
-      await navigator.share({
-        text: msg,
-        files: [pdfFile]
-      });
-      toast('Shared via WhatsApp!','ok');
-      return;
-    }
-  } catch(err){
-    // User cancelled or Web Share not supported — fall through to fallback
-    if(err.name === 'AbortError'){
-      toast('Share cancelled','info');
-      return;
-    }
-  }
-
-  // Fallback: Download PDF + open WhatsApp with text
-  doc.save(fname);
-  const raw=b.phone.replace(/\D/g,'');
-  setTimeout(()=>window.open(`https://wa.me/${raw.startsWith('91')?raw:'91'+raw}?text=${encodeURIComponent(msg)}`,'_blank'),700);
-  toast('PDF downloaded — attach it in WhatsApp','info');
+  // Open WhatsApp directly to the client's number after PDF downloads
+  setTimeout(() => window.open(waUrl, '_blank'), 700);
+  toast(`PDF downloaded — opening WhatsApp for ${b.phone}`, 'ok');
 }
 
 /* ─── PAY UPDATE ──────────────────────────────────────────────── */
