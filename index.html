@@ -910,6 +910,9 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
         <div class="nav-item" onclick="goPage('list',this)">
           <span class="nav-dot"></span><span class="nav-icon">≡</span> All Bookings
         </div>
+        <div class="nav-item" onclick="goPage('settings',this)">
+          <span class="nav-dot"></span><span class="nav-icon">⚙</span> Backup & Settings
+        </div>
       </nav>
       <div class="sidebar-watermark">RAJAV</div>
       <div class="sidebar-bottom">
@@ -1223,6 +1226,53 @@ td { padding: 11px 14px; font-size: 13px; vertical-align: middle; }
           </div>
         </div>
 
+        <!-- BACKUP & SETTINGS -->
+        <div class="page" id="pg_settings">
+          <div class="page-heading">Backup & Settings</div>
+          
+          <div style="background: var(--surface); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <span style="font-size: 24px;">📊</span>
+              <div>
+                <h3 style="font-family: var(--serif); font-size: 18px; color: var(--text);">Google Sheets Integration</h3>
+                <p style="font-size: 13px; color: var(--muted); margin-top: 4px;">Sync bookings automatically to a Google Spreadsheet for backup.</p>
+              </div>
+            </div>
+            
+            <div class="field" style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Google Apps Script Web App URL</label>
+              <input id="settings_gsheet_url" type="text" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius); font-size:14px; background:var(--bg); color:var(--text); transition:border var(--transition);">
+            </div>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn-primary" style="padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; background: var(--accent); color: white; border-radius: var(--radius); transition: opacity var(--transition);" onclick="saveGSheetSettings()">Save URL</button>
+              <button class="btn-secondary" style="padding: 9px 18px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); transition: background var(--transition);" onclick="syncAllToGSheet()">Sync All Bookings</button>
+            </div>
+          </div>
+          
+          <div style="background: var(--surface); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--border);">
+            <h3 style="font-family: var(--serif); font-size: 18px; color: var(--text); margin-bottom: 12px;">How to Set Up Google Sheets Backup</h3>
+            <ol style="font-size: 13.5px; color: var(--text); line-height: 1.6; padding-left: 20px; margin-bottom: 16px;">
+              <li style="margin-bottom: 8px;">Create a new Google Sheet and open it.</li>
+              <li style="margin-bottom: 8px;">Click on <strong>Extensions &gt; Apps Script</strong> at the top.</li>
+              <li style="margin-bottom: 8px;">Delete any existing code in the editor and paste the <strong>Apps Script Code</strong> provided below.</li>
+              <li style="margin-bottom: 8px;">Click the <strong>Deploy</strong> button (top right) &gt; select <strong>New deployment</strong>.</li>
+              <li style="margin-bottom: 8px;">Click the gear icon (Select type) and choose <strong>Web app</strong>.</li>
+              <li style="margin-bottom: 8px;">Set <em>Execute as</em> to <strong>Me</strong> and <em>Who has access</em> to <strong>Anyone</strong>.</li>
+              <li style="margin-bottom: 8px;">Click <strong>Deploy</strong> (you may need to authorize permissions for your Google Account).</li>
+              <li style="margin-bottom: 8px;">Copy the <strong>Web App URL</strong>, paste it into the field above, and click <strong>Save URL</strong>.</li>
+            </ol>
+            
+            <div style="margin-top: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Apps Script Code</label>
+                <button onclick="copyAppsScriptCode()" style="font-size: 11px; background: var(--accent-light); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-weight: 600;">Copy Code</button>
+              </div>
+              <textarea id="apps_script_code_box" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); resize: vertical;"></textarea>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /content -->
     </div><!-- /main -->
   </div><!-- /shell -->
@@ -1368,11 +1418,19 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const _db  = firebase.database();
 const _ref = _db.ref('bookings');
 
+// Google Sheets Config
+let gSheetUrl = 'https://script.google.com/macros/s/AKfycbx7NBYtlrvO98xaYPoYHsDPAsjSoRGIXjvtpTGx-0P01mnO2c__n3uUv1WPgXfzt96r/exec';
+_db.ref('settings/googleSheetsUrl').on('value', snap => {
+  gSheetUrl = snap.val() || 'https://script.google.com/macros/s/AKfycbx7NBYtlrvO98xaYPoYHsDPAsjSoRGIXjvtpTGx-0P01mnO2c__n3uUv1WPgXfzt96r/exec';
+  const el = document.getElementById('settings_gsheet_url');
+  if (el) el.value = gSheetUrl;
+});
+
 // Seed initial credentials in Firebase Realtime Database
 _db.ref('credentials').once('value', snap => {
   if (!snap.exists()) {
     _db.ref('credentials').set({
-      admin: 'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d', // rajav2024
+      admin: 'e42bb68ed4ed4895df42bd73bddf98e1d0172cc7ad225383ea13d6a63b99c7c4', // rajav2024
       manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4' // cherai123
     });
   }
@@ -1393,10 +1451,44 @@ let currentStep  = 1;
 let _loggedIn    = false;
 const TOTAL_STEPS = 5;
 
-// Firebase CRUD helpers
-const fbSet    = (bk)      => _ref.child(bk.id).set(bk);
-const fbUpdate = (id, upd) => _ref.child(id).update(upd);
-const fbDelete = (id)      => _ref.child(id).remove();
+// Google Sheets sync helper
+const syncBookingToGSheet = (action, bkId, customBk = null) => {
+  if (!gSheetUrl) return;
+  let bk = customBk;
+  if (!bk && action !== 'delete') {
+    bk = bks.find(b => b.id === bkId);
+  }
+  if (!bk && action === 'delete') {
+    bk = { id: bkId };
+  }
+  if (!bk) return;
+  
+  fetch(gSheetUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: action, booking: bk })
+  }).catch(e => console.warn('Google Sheet sync failed:', e));
+};
+
+// Firebase CRUD helpers with auto-sync to Google Sheets
+const fbSet = (bk) => {
+  const p = _ref.child(bk.id).set(bk);
+  p.then(() => syncBookingToGSheet('set', bk.id, bk));
+  return p;
+};
+const fbUpdate = (id, upd) => {
+  const p = _ref.child(id).update(upd);
+  p.then(() => syncBookingToGSheet('update', id));
+  return p;
+};
+const fbDelete = (id) => {
+  const p = _ref.child(id).remove();
+  p.then(() => syncBookingToGSheet('delete', id));
+  return p;
+};
 
 // Keep localStorage as offline cache backup
 const _localSave = () => localStorage.setItem('rajav_v4', JSON.stringify(bks));
@@ -1479,7 +1571,7 @@ async function doLogin(){
     // Fallback checks
     const PLAIN = {admin:'rajav2024', manager:'cherai123'};
     const HASHES = {
-      admin:   'b87d563b1b65a86e5e6ef0f98b6bb5b0f2a7e2c0f7e6d4e5d3a9b8c1f0e2a4d',
+      admin:   'e42bb68ed4ed4895df42bd73bddf98e1d0172cc7ad225383ea13d6a63b99c7c4',
       manager: 'e4c89f2a1b3d5f7e9c0a2b4d6e8f0a2c4e6f8a0b2c4d6e8f0a2b4c6d8e0f2a4'
     };
     
@@ -1647,7 +1739,7 @@ function toggleSidebar(){
 }
 
 /* ─── NAV ────────────────────────────────────────────────────── */
-const PAGE_NAMES = {dash:'Dashboard',book:'New Booking',cal:'Calendar',list:'All Bookings'};
+const PAGE_NAMES = {dash:'Dashboard',book:'New Booking',cal:'Calendar',list:'All Bookings',settings:'Backup & Settings'};
 function goPage(id, el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1658,6 +1750,7 @@ function goPage(id, el){
   if(id==='book') initForm();
   if(id==='cal')  renderCal();
   if(id==='list') renderTable();
+  if(id==='settings') initSettingsPage();
   // Close mobile sidebar
   const sidebar = document.getElementById('sidebar');
   if(sidebar.classList.contains('open')) toggleSidebar();
@@ -2390,6 +2483,162 @@ function toast(msg,type='ok'){
   const el=document.getElementById('toast');
   el.className='toast '+type; void el.offsetWidth; el.classList.add('show');
   clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ─── SETTINGS & GOOGLE SHEETS FUNCTIONS ──────────────────────────
+function initSettingsPage() {
+  const codeBox = document.getElementById('apps_script_code_box');
+  if (codeBox) {
+    codeBox.value = `function doPost(e) {
+  try {
+    var json = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    var headers = ["Booking ID", "Guest Name", "Phone", "Check-in", "Check-out", "Nights", "Room ID", "Room Name", "Guests", "Paid Amount", "Balance", "Total Amount", "Status", "Notes", "Created At"];
+    
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#0D7C66").setFontColor("white");
+    }
+    
+    var action = json.action;
+    var bk = json.booking;
+    
+    if (action === 'set' || action === 'update') {
+      var data = sheet.getDataRange().getValues();
+      var foundRow = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === bk.id) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      
+      var nights = Math.round((new Date(bk.checkout) - new Date(bk.checkin)) / 86400000) || 0;
+      
+      var rowData = [
+        bk.id,
+        bk.guestName || "",
+        bk.phone || "",
+        bk.checkin || "",
+        bk.checkout || "",
+        nights,
+        bk.roomId || "",
+        bk.roomName || "",
+        bk.guests || 0,
+        bk.paidAmount || 0,
+        bk.balance || 0,
+        bk.totalAmount || 0,
+        bk.status || "",
+        bk.notes || "",
+        bk.createdAt || ""
+      ];
+      
+      if (foundRow !== -1) {
+        sheet.getRange(foundRow, 1, 1, rowData.length).setValues([rowData]);
+      } else {
+        sheet.appendRow(rowData);
+      }
+    } else if (action === 'delete') {
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === bk.id) {
+          sheet.deleteRow(i + 1);
+          break;
+        }
+      }
+    } else if (action === 'sync_all') {
+      var bookings = json.bookings || [];
+      sheet.clearContents();
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#0D7C66").setFontColor("white");
+      
+      if (bookings.length > 0) {
+        var rows = bookings.map(function(b) {
+          var nights = Math.round((new Date(b.checkout) - new Date(b.checkin)) / 86400000) || 0;
+          return [
+            b.id,
+            b.guestName || "",
+            b.phone || "",
+            b.checkin || "",
+            b.checkout || "",
+            nights,
+            b.roomId || "",
+            b.roomName || "",
+            b.guests || 0,
+            b.paidAmount || 0,
+            b.balance || 0,
+            b.totalAmount || 0,
+            b.status || "",
+            b.notes || "",
+            b.createdAt || ""
+          ];
+        });
+        sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+      }
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({status: 'success'}))
+                         .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({status: 'error', message: error.toString()}))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+  }
+  const urlEl = document.getElementById('settings_gsheet_url');
+  if (urlEl) urlEl.value = gSheetUrl;
+}
+
+function copyAppsScriptCode() {
+  const codeBox = document.getElementById('apps_script_code_box');
+  if (codeBox) {
+    codeBox.select();
+    document.execCommand('copy');
+    toast('Code copied to clipboard! 📋', 'ok');
+  }
+}
+
+function saveGSheetSettings() {
+  const url = document.getElementById('settings_gsheet_url').value.trim();
+  if (url && !url.startsWith('https://script.google.com/')) {
+    toast('Invalid Google Apps Script URL', 'err');
+    return;
+  }
+  showLoader();
+  _db.ref('settings/googleSheetsUrl').set(url)
+    .then(() => {
+      hideLoader();
+      toast('Google Sheet URL saved successfully!', 'ok');
+    })
+    .catch(err => {
+      hideLoader();
+      toast('Failed to save settings: ' + err.message, 'err');
+    });
+}
+
+function syncAllToGSheet() {
+  if (!gSheetUrl) {
+    toast('Please save a Google Apps Script URL first', 'err');
+    return;
+  }
+  showLoader();
+  fetch(gSheetUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: 'sync_all', bookings: bks })
+  })
+  .then(() => {
+    hideLoader();
+    toast('Sync command sent to Google Sheets! Check your sheet.', 'ok');
+  })
+  .catch(err => {
+    hideLoader();
+    toast('Sync failed: ' + err.message, 'err');
+  });
 }
 </script>
 <!-- Firebase Sync Loader Overlay -->
