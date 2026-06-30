@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rajav-admin-v5';
+const CACHE_NAME = 'rajav-admin-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -28,8 +28,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Always fetch Firebase & WhatsApp from network
-  if (url.hostname.includes('firebase') || url.hostname.includes('whatsapp') || url.hostname.includes('wa.me')) {
+  // Always fetch Firebase, WhatsApp & Upload service from network
+  if (url.hostname.includes('firebase') || url.hostname.includes('whatsapp') || url.hostname.includes('wa.me') || url.hostname.includes('tmpfiles.org')) {
     e.respondWith(fetch(e.request).catch(() => new Response('', { status: 503 })));
     return;
   }
