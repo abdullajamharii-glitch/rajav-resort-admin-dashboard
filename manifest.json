@@ -2,27 +2,27 @@
   "name": "Rajav Beach Resort — Management",
   "short_name": "Rajav Admin",
   "description": "Admin dashboard for Rajav Beach Resort booking management, Cherai Beach, Kochi, Kerala",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0F1613",
   "theme_color": "#0D7C66",
-  "scope": "/",
+  "scope": "./",
   "icons": [
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
